@@ -323,7 +323,7 @@ function ideaPrompt(input: StarterInput & { rubric: string; requirements: string
 type CheckStage = "typechecking" | "building" | "testing";
 const CHECKS: { stage: CheckStage; label: string; cmd: string; args: string[]; timeoutMs: number }[] = [
   { stage: "typechecking", label: "Typecheck (tsc --noEmit)", cmd: "npx", args: ["--no-install", "tsc", "--noEmit", "-p", "."], timeoutMs: 120_000 },
-  { stage: "building", label: "Production build (vite build)", cmd: "npx", args: ["--no-install", "vite", "build", "--logLevel", "warn"], timeoutMs: 120_000 },
+  { stage: "building", label: "Production build (vite build)", cmd: "npx", args: ["--no-install", "vite", "build", "--base", "./", "--logLevel", "warn"], timeoutMs: 120_000 },
   { stage: "testing", label: "Smoke test (tsx smoke.test.ts)", cmd: "npx", args: ["--no-install", "tsx", "smoke.test.ts"], timeoutMs: 60_000 },
 ];
 
@@ -624,6 +624,19 @@ export async function reapInterrupted(hackathonId: string) {
 
 export function zipPathFor(dir: string | null) {
   return dir ? path.join(dir, "starter.zip") : null;
+}
+
+/** Absolute path of a file in the built app's vite dist/, or null when unsafe or missing. */
+export function previewPathFor(dir: string | null, rel: string): string | null {
+  if (!dir) return null;
+  const clean = (rel || "index.html").replace(/\\/g, "/").replace(/^\/+/, "");
+  if (clean.split("/").some((s) => s === ".." || s === "") || !/^[\w@.\-/]+$/.test(clean)) return null;
+  return path.join(dir, "app", "dist", clean);
+}
+
+export function hasPreview(dir: string | null): boolean {
+  const p = previewPathFor(dir, "index.html");
+  return !!p && existsSync(p);
 }
 
 export async function readBuildFile(dir: string | null, rel: string) {

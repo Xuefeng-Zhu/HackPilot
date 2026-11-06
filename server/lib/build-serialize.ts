@@ -1,5 +1,6 @@
-import { buildDownloadUrl, type BuildOut } from "../../shared/build.js";
+import { buildDownloadUrl, buildPreviewUrl, type BuildOut } from "../../shared/build.js";
 import type { schema } from "../db/index.js";
+import { hasPreview } from "./builder.js";
 
 type BuildRow = typeof schema.builds.$inferSelect;
 
@@ -19,6 +20,7 @@ export function serializeBuild(row: BuildRow): BuildOut {
     notes: row.notes,
     error: row.error,
     downloadUrl: row.status === "passed" && row.meta?.zipBytes ? buildDownloadUrl(row.id) : null,
+    previewUrl: row.status === "passed" && hasPreview(row.dir) ? buildPreviewUrl(row.id) : null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     finishedAt: row.finishedAt,

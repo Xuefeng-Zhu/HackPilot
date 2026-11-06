@@ -62,6 +62,8 @@ export const buildOut = z.object({
   notes: z.string().nullable(),
   error: z.string().nullable(),
   downloadUrl: z.string().nullable(),
+  /** Same-origin URL of the built app (vite dist/), for the inline Preview. */
+  previewUrl: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
   finishedAt: z.string().nullable(),
@@ -72,4 +74,8 @@ export const MAX_REPAIR_ROUNDS = 3;
 
 export function buildDownloadUrl(id: string) {
   return `/api/builds/${encodeURIComponent(id)}/zip`;
+}
+
+export function buildPreviewUrl(id: string) {
+  return `/api/builds/${encodeURIComponent(id)}/preview/index.html`;
 }

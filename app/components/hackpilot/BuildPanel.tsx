@@ -9,6 +9,8 @@ import {
   IconChevronDown,
   IconCircleDashed,
   IconDownload,
+  IconExternalLink,
+  IconEye,
   IconFile,
   IconHammer,
   IconInfoCircle,
@@ -116,6 +118,8 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
   const queryClient = useQueryClient();
   const [showLog, setShowLog] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewNonce, setPreviewNonce] = useState(0);
 
   const { data } = useActionQuery(
     "get-build",
@@ -168,6 +172,18 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
             {running || start.isPending ? <IconLoader2 className="size-4 motion-safe:animate-spin" /> : <IconHammer className="size-4" />}
             {running ? "Building…" : build ? "Build again" : "Build it"}
           </Button>
+          {build?.previewUrl ? (
+            <Button
+              variant={showPreview ? "secondary" : "outline"}
+              aria-pressed={showPreview}
+              onClick={() => {
+                setShowPreview((v) => !v);
+                setPreviewNonce((n) => n + 1);
+              }}
+            >
+              <IconEye className="size-4" /> {showPreview ? "Hide preview" : "Preview"}
+            </Button>
+          ) : null}
           {build?.downloadUrl ? (
             <Button variant="outline" asChild>
               <a href={build.downloadUrl} download>
@@ -228,6 +244,34 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
                 <p className="mt-1 text-xs">Checked off: {build.meta.tasksCompleted.join(" · ")}</p>
               ) : null}
               {build.notes ? <p className="mt-1 text-xs opacity-80">{build.notes}</p> : null}
+            </div>
+          ) : null}
+          {showPreview && build.previewUrl ? (
+            <div className="overflow-hidden rounded-lg border border-border bg-background">
+              <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+                <span className="flex gap-1" aria-hidden>
+                  <span className="size-2.5 rounded-full bg-rose-400/70" />
+                  <span className="size-2.5 rounded-full bg-amber-400/70" />
+                  <span className="size-2.5 rounded-full bg-emerald-400/70" />
+                </span>
+                <span className="truncate font-medium text-foreground">{build.ideaTitle}</span>
+                <span className="truncate">· the generated app, running from its production build</span>
+                <a
+                  href={build.previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto inline-flex shrink-0 items-center gap-1 hover:text-foreground"
+                >
+                  Open in new tab <IconExternalLink className="size-3.5" />
+                </a>
+              </div>
+              <iframe
+                key={`${build.id}-${previewNonce}`}
+                src={build.previewUrl}
+                title={`Preview of ${build.ideaTitle}`}
+                sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+                className="block h-[34rem] w-full bg-white"
+              />
             </div>
           ) : null}
           {build.status === "failed" ? (
