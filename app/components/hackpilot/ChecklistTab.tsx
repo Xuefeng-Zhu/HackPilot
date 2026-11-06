@@ -141,7 +141,7 @@ export function ChecklistTab({ ws }: { ws: WorkspaceOut }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
+    <div className="grid gap-4 @4xl:grid-cols-[minmax(0,1fr)_18rem]">
       <section className="rounded-xl border border-border bg-card px-4">
         {ws.submissionItems.length ? (
           <ul className="divide-y divide-border">

@@ -110,7 +110,7 @@ export function Workspace({ id }: { id: string }) {
   const selected = ws.ideas.find((i) => i.selected);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-5 sm:px-6">
+    <div className="@container mx-auto w-full max-w-6xl px-4 pb-16 pt-5 sm:px-6">
       <header className="flex flex-col gap-4 pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <Link

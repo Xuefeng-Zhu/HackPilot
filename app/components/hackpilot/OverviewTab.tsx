@@ -370,7 +370,7 @@ export function OverviewTab({ ws }: { ws: WorkspaceOut }) {
     onError: (e) => toast.error(actionErrorMessage(e) ?? "Re-import failed."),
   });
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+    <div className="grid gap-4 @3xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="space-y-4">
         <Section
           title="The brief"
