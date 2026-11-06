@@ -31,6 +31,7 @@ import {
   type StarterInput,
   templateFiles,
 } from "./build-template.js";
+import { parseFileBlocks } from "./file-blocks.js";
 import { chatWithFallback, type ChatMessage, providerChain } from "./llm.js";
 import { nowIso } from "./workspace.js";
 
@@ -39,6 +40,7 @@ export const BUILD_ROOT = path.resolve(
 );
 
 const MAX_FILES = 40;
+const VITE_CONFIG = `import { defineConfig } from "vite";\nimport react from "@vitejs/plugin-react";\n\nexport default defineConfig({ plugins: [react()] });\n`;
 const MAX_FILE_BYTES = 120_000;
 const running = new Map<string, Promise<void>>();
 
@@ -107,7 +109,7 @@ function childEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
   for (const [k, v] of Object.entries(process.env)) {
     if (/KEY|TOKEN|SECRET|PASSWORD|DATABASE_URL|COOKIE/i.test(k)) continue;
-    if (k === "NODE_OPTIONS" || k.startsWith("VITE_") || k === "PORT") continue;
+    if (k === "NODE_OPTIONS" || k === "NODE_USE_ENV_PROXY" || k.startsWith("VITE_") || k === "PORT") continue;
     env[k] = v;
   }
   env.CI = "1";
@@ -150,7 +152,11 @@ function run(cmd: string, args: string[], cwd: string, timeoutMs: number): Promi
     });
     child.on("close", (code) => {
       clearTimeout(timer);
-      resolve({ ok: code === 0 && !timedOut, code, output: out, ms: Date.now() - t0, timedOut });
+      const clean = out
+        .split("\n")
+        .filter((l) => !/UNDICI-EHPA|--trace-warnings|ExperimentalWarning/.test(l))
+        .join("\n");
+      resolve({ ok: code === 0 && !timedOut, code, output: clean, ms: Date.now() - t0, timedOut });
     });
   });
 }
@@ -159,21 +165,6 @@ const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}\n…(tr
 const tail = (s: string, n: number) => (s.length > n ? `…${s.slice(-n)}` : s);
 
 // ---------------------------------------------------------------- files
-
-/** Parse `=== FILE: path === … === END FILE ===` blocks (robust to fences). */
-export function parseFileBlocks(text: string): { files: GenFile[]; notes: string } {
-  const files: GenFile[] = [];
-  const re = /^=== FILE:\s*(.+?)\s*===\s*\n([\s\S]*?)\n=== END FILE ===/gm;
-  for (const m of text.matchAll(re)) {
-    let content = m[2] ?? "";
-    // Some models wrap each file in a markdown fence inside the block.
-    const fenced = content.match(/^```[\w-]*\n([\s\S]*?)\n```\s*$/);
-    if (fenced?.[1] !== undefined) content = fenced[1];
-    files.push({ path: (m[1] ?? "").trim(), content: content.endsWith("\n") ? content : `${content}\n` });
-  }
-  const notes = text.match(/^NOTES:\s*(.+)$/m)?.[1]?.trim() ?? "";
-  return { files, notes };
-}
 
 function safeRelPath(p: string): string | null {
   const clean = p.replace(/\\/g, "/").replace(/^\.\/+/, "").trim();
@@ -220,6 +211,33 @@ function normalizePackageJson(raw: string | undefined, title: string): string {
   );
 }
 
+/**
+ * Deterministic fixes for the slips models make most often, applied before
+ * every check so repair rounds go to real bugs: a missing default export on
+ * App, and an entry file that doesn't match it.
+ */
+async function autofix(dir: string): Promise<string[]> {
+  const fixed: string[] = [];
+  const appPath = path.join(dir, "src", "App.tsx");
+  if (existsSync(appPath)) {
+    const app = await fs.readFile(appPath, "utf8");
+    if (!/export\s+default\b/.test(app) && /\b(function|const)\s+App\b/.test(app)) {
+      await fs.writeFile(appPath, `${app.trimEnd()}\n\nexport default App;\n`);
+      fixed.push("added `export default App`");
+    }
+  }
+  const mainPath = path.join(dir, "src", "main.tsx");
+  const css = existsSync(path.join(dir, "src", "styles.css")) ? 'import "./styles.css";\n' : existsSync(path.join(dir, "src", "index.css")) ? 'import "./index.css";\n' : "";
+  const main = `import { StrictMode } from "react";\nimport { createRoot } from "react-dom/client";\nimport App from "./App";\n${css}\nconst root = document.getElementById("root");\nif (!root) throw new Error("missing #root");\ncreateRoot(root).render(\n  <StrictMode>\n    <App />\n  </StrictMode>,\n);\n`;
+  const current = existsSync(mainPath) ? await fs.readFile(mainPath, "utf8") : "";
+  if (current !== main) {
+    await fs.mkdir(path.dirname(mainPath), { recursive: true });
+    await fs.writeFile(mainPath, main);
+    if (current) fixed.push("normalized src/main.tsx");
+  }
+  return fixed;
+}
+
 async function writeFiles(dir: string, files: GenFile[], title: string): Promise<{ written: string[]; pkgChanged: boolean }> {
   const written: string[] = [];
   let pkgChanged = false;
@@ -227,6 +245,8 @@ async function writeFiles(dir: string, files: GenFile[], title: string): Promise
     const rel = safeRelPath(f.path);
     if (!rel) continue;
     let content = f.content.slice(0, MAX_FILE_BYTES);
+    if (rel === "tsconfig.json") content = DEFAULT_TSCONFIG;
+    if (rel === "vite.config.ts") content = VITE_CONFIG;
     if (rel === "package.json") {
       const prev = existsSync(path.join(dir, rel)) ? await fs.readFile(path.join(dir, rel), "utf8") : "";
       content = normalizePackageJson(content, title);
@@ -267,7 +287,7 @@ const SYSTEM_PROMPT = `You are a senior engineer building a hackathon MVP starte
 Stack: Vite 5 + React 18 + TypeScript (strict). It must pass, with no edits:
   npm install && npx tsc --noEmit && npx vite build && npx tsx smoke.test.ts
 Write these files: package.json (dependencies: react, react-dom; devDependencies: @types/node, @types/react, @types/react-dom, typescript, vite, @vitejs/plugin-react, tsx), tsconfig.json (one file, no project references, "types":["node"], "include":["src","smoke.test.ts"]), vite.config.ts, index.html, src/main.tsx, src/App.tsx, src/styles.css, src/logic.ts (pure, framework-free core logic of the idea, with realistic seed/demo data so the app works offline with no API key), smoke.test.ts (imports from "./src/logic", uses \`import assert from "node:assert/strict"\`, checks the core logic on 3-6 concrete cases, prints "SMOKE OK" last), README.md (what it is + how to run).
-Rules: plain CSS, no UI or state libraries, no network calls, no environment variables. Strict mode clean: no unused locals, handle possibly-null values. Keep it focused: the core workflow of the idea working end-to-end in the UI.
+Rules: src/App.tsx must \`export default function App()\` and src/main.tsx imports it as default. Plain CSS, no UI or state libraries, no network calls, no environment variables. Strict mode clean: no unused locals, handle possibly-null values. Keep it focused: the core workflow of the idea working end-to-end in the UI.
 Output format, nothing else: every file as
 === FILE: relative/path ===
 <file content verbatim, no markdown fences>
@@ -343,20 +363,28 @@ async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress)
 
 async function repair(dir: string, failing: { label: string; output: string }, round: number, p: Progress) {
   const sources = await readSources(dir);
-  const r = await chatWithFallback(
-    [
-      { role: "system", content: REPAIR_SYSTEM },
-      {
-        role: "user",
-        content: `Failing step: ${failing.label}\nOutput:\n${clip(failing.output, 6000)}\n\nCurrent files:\n${clip(sources, 60_000)}`,
-      },
-    ],
-    { purpose: "build", maxTokens: 12_000, timeoutMs: 180_000, firstTokenMs: 60_000 },
-  );
-  p.meta.calls?.push(...r.attempts.map((a) => `repair ${round}: ${a}`));
-  if (r.cost != null) p.meta.cost = (p.meta.cost ?? 0) + r.cost;
-  if (r.completionTokens != null) p.meta.completionTokens = (p.meta.completionTokens ?? 0) + r.completionTokens;
-  return parseFileBlocks(r.text);
+  const messages: ChatMessage[] = [
+    { role: "system", content: REPAIR_SYSTEM },
+    {
+      role: "user",
+      content: `Failing step: ${failing.label}\nOutput:\n${clip(failing.output, 6000)}\n\nCurrent files (tsconfig.json, vite.config.ts and package.json toolchain versions are fixed; change source files):\n${clip(sources, 60_000)}`,
+    },
+  ];
+  // Rounds 2+ escalate to the fallback provider (a stronger paid model).
+  const skip: ("nvidia" | "openrouter")[] = round >= 2 ? ["nvidia"] : [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const chain = await providerChain("build");
+    if (!chain.some((t) => !skip.includes(t.provider))) skip.length = 0;
+    const r = await chatWithFallback(messages, { purpose: "build", maxTokens: 12_000, timeoutMs: 180_000, firstTokenMs: 60_000, skip });
+    p.meta.calls?.push(...r.attempts.map((a) => `repair ${round}: ${a}`));
+    if (r.cost != null) p.meta.cost = (p.meta.cost ?? 0) + r.cost;
+    if (r.completionTokens != null) p.meta.completionTokens = (p.meta.completionTokens ?? 0) + r.completionTokens;
+    const parsed = parseFileBlocks(r.text);
+    if (parsed.files.length) return { ...parsed, model: `${r.model} (${r.provider})` };
+    p.meta.calls?.push(`repair ${round}: ${r.provider}/${r.model} returned no files`);
+    skip.push(r.provider);
+  }
+  return { files: [] as GenFile[], notes: "", model: "" };
 }
 
 async function loadInput(buildId: string) {
@@ -451,7 +479,7 @@ async function pipeline(buildId: string) {
       const g = await generateLlm(input, p);
       files = g.files;
       notes = g.notes;
-      await p.end(t0, "ok", `${p.meta.provider}/${p.meta.model} wrote ${files.length} files`);
+      await p.end(t0, "ok", `${p.meta.model} (${p.meta.provider}) wrote ${files.length} files`);
     } catch (error) {
       await p.end(t0, "fail", error instanceof Error ? error.message.slice(0, 600) : "generation failed");
       await p.info("generating", "Falling back to the starter template", "Every model call failed; the template still gives you a running app.");
@@ -465,6 +493,7 @@ async function pipeline(buildId: string) {
     await p.end(t0, "ok", `${files.length} files`);
   }
   if (!files.some((f) => f.path === "tsconfig.json")) files.push({ path: "tsconfig.json", content: DEFAULT_TSCONFIG });
+  if (!files.some((f) => f.path === "vite.config.ts")) files.push({ path: "vite.config.ts", content: VITE_CONFIG });
   if (!files.some((f) => f.path === "package.json")) files.push({ path: "package.json", content: "{}" });
   if (!files.some((f) => f.path === "smoke.test.ts")) {
     files.push({ path: "smoke.test.ts", content: `import "./src/logic";\nconsole.log("SMOKE OK");\n` });
@@ -480,6 +509,8 @@ async function pipeline(buildId: string) {
 
   // 3. Check + repair loop
   for (let round = 0; ; round++) {
+    const fixes = await autofix(dir);
+    if (fixes.length) await p.info("repairing", "Auto-fixed common slips", fixes.join(" · "));
     let failing: { label: string; output: string } | null = null;
     for (const c of CHECKS) {
       const t0 = await p.begin(c.stage, round ? `${c.label} · after repair ${round}` : c.label);
@@ -505,7 +536,7 @@ async function pipeline(buildId: string) {
       const fix = await repair(dir, failing, round + 1, p);
       if (!fix.files.length) throw new Error("the model returned no file changes");
       const { written, pkgChanged } = await writeFiles(dir, fix.files, input.title);
-      await p.end(t0, "ok", `Changed ${written.join(", ")}${fix.notes ? ` — ${fix.notes}` : ""}`);
+      await p.end(t0, "ok", `${fix.model}: changed ${written.join(", ")}${fix.notes ? ` — ${fix.notes}` : ""}`);
       if (pkgChanged && !(await install(dir, p, "Reinstall changed dependencies"))) {
         await p.finish("failed", { files: await listFiles(dir), error: "npm install failed after a repair." });
         return;

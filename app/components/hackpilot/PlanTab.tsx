@@ -20,6 +20,7 @@ import type { TaskOut, WorkspaceOut } from "@shared/outputs";
 import { addDaysToKey, dateKeyInZone, daysBetweenKeys } from "@shared/time";
 
 import { askPilot } from "./ask-pilot";
+import { BuildPanel } from "./BuildPanel";
 import { useWorkspaceCache } from "./workspace-cache";
 
 const PHASE_STYLES: Record<string, string> = {
@@ -183,6 +184,7 @@ export function PlanTab({ ws }: { ws: WorkspaceOut }) {
 
   return (
     <div className="space-y-4">
+      <BuildPanel ws={ws} />
       <div className="flex flex-wrap items-center gap-2">
         <Button disabled={plan.isPending || !h.deadlineAt} onClick={() => plan.mutate({ hackathonId: h.id, mode: "fresh", timezone: tz })}>
           <IconRefresh className={`size-4 ${plan.isPending ? "motion-safe:animate-spin" : ""}`} />

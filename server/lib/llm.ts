@@ -319,10 +319,10 @@ export async function chatWithFallback(
         firstTokenMs: opts.firstTokenMs ?? 60_000,
         jsonObject: opts.jsonObject ?? false,
       });
-      attempts.push(`${target.provider}/${target.model}: ok in ${Math.round(r.ms / 1000)}s`);
+      attempts.push(`${target.provider}: ${target.model} ok in ${Math.round(r.ms / 1000)}s`);
       return { ...r, attempts };
     } catch (error) {
-      attempts.push(`${target.provider}/${target.model}: ${short(error)}`);
+      attempts.push(`${target.provider}: ${target.model} failed: ${short(error)}`);
       console.warn(`[llm] ${target.provider}/${target.model} failed: ${short(error)}`);
     }
   }
