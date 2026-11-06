@@ -169,7 +169,7 @@ export async function generateStructured<T extends z.ZodType>(opts: {
       });
       return { object: result.object as z.infer<T>, model: target.model, provider: target.provider };
     } catch (error) {
-      errors.push(`${target.provider}/${target.model}: ${short(error)}`);
+      errors.push(`${target.provider}: ${target.model}: ${short(error)}`);
       console.warn(`[llm] ${target.provider} failed, trying next provider: ${short(error)}`);
     }
   }
@@ -323,7 +323,7 @@ export async function chatWithFallback(
       return { ...r, attempts };
     } catch (error) {
       attempts.push(`${target.provider}: ${target.model} failed: ${short(error)}`);
-      console.warn(`[llm] ${target.provider}/${target.model} failed: ${short(error)}`);
+      console.warn(`[llm] ${target.provider}: ${target.model} failed: ${short(error)}`);
     }
   }
   throw new Error(`Every provider failed: ${attempts.join(" | ")}`);

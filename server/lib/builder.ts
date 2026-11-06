@@ -334,6 +334,13 @@ async function install(dir: string, p: Progress, label = "Install dependencies (
   return r.ok;
 }
 
+/** "nemotron-3.5-super-vl-120b-a12b on NVIDIA" — model ids often already carry the vendor prefix. */
+function modelLabel(provider?: string, model?: string): string {
+  const name = (model ?? "model").split("/").pop() ?? "model";
+  const where = provider === "nvidia" ? "NVIDIA" : provider === "openrouter" ? "OpenRouter" : provider;
+  return where ? `${name} on ${where}` : name;
+}
+
 async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress) {
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -356,7 +363,7 @@ async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress)
     const parsed = parseFileBlocks(r.text);
     const paths = new Set(parsed.files.map((f) => f.path));
     if (parsed.files.length >= 4 && paths.has("src/App.tsx")) return parsed;
-    p.meta.calls?.push(`${r.provider}/${r.model}: unusable output (${parsed.files.length} files)`);
+    p.meta.calls?.push(`${modelLabel(r.provider, r.model)}: unusable output (${parsed.files.length} files)`);
     skip.push(r.provider);
   }
   throw new Error("No provider produced a usable set of files.");
@@ -382,7 +389,7 @@ async function repair(dir: string, failing: { label: string; output: string }, r
     if (r.completionTokens != null) p.meta.completionTokens = (p.meta.completionTokens ?? 0) + r.completionTokens;
     const parsed = parseFileBlocks(r.text);
     if (parsed.files.length) return { ...parsed, model: `${r.model} (${r.provider})` };
-    p.meta.calls?.push(`repair ${round}: ${r.provider}/${r.model} returned no files`);
+    p.meta.calls?.push(`repair ${round}: ${modelLabel(r.provider, r.model)} returned no files`);
     skip.push(r.provider);
   }
   return { files: [] as GenFile[], notes: "", model: "" };
@@ -483,7 +490,7 @@ async function pipeline(buildId: string) {
       const g = await generateLlm(input, p);
       files = g.files;
       notes = g.notes;
-      await p.end(t0, "ok", `${p.meta.model} (${p.meta.provider}) wrote ${files.length} files`);
+      await p.end(t0, "ok", `${modelLabel(p.meta.provider, p.meta.model)} wrote ${files.length} files`);
     } catch (error) {
       await p.end(t0, "fail", error instanceof Error ? error.message.slice(0, 600) : "generation failed");
       await p.info("generating", "Falling back to the starter template", "Every model call failed; the template still gives you a running app.");
