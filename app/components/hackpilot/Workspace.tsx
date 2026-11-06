@@ -159,22 +159,22 @@ export function Workspace({ id }: { id: string }) {
         }}
       >
         <TabsList className="mb-5">
-          <TabsTrigger value="overview">
+          <TabsTrigger value="overview" className="gap-1.5">
             <IconClipboardCheck className="size-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="ideas">
+          <TabsTrigger value="ideas" className="gap-1.5">
             <IconSparkles className="size-4" />
             Ideas <span className="ml-1 text-xs text-muted-foreground hp-tabular">{ws.ideas.length}</span>
           </TabsTrigger>
-          <TabsTrigger value="plan">
+          <TabsTrigger value="plan" className="gap-1.5">
             <IconLayoutKanban className="size-4" />
             Plan
             <span className="ml-1 text-xs text-muted-foreground hp-tabular">
               {ws.progress.tasksDone}/{ws.progress.tasksTotal}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="checklist">
+          <TabsTrigger value="checklist" className="gap-1.5">
             <IconListCheck className="size-4" />
             Checklist
             <span className="ml-1 text-xs text-muted-foreground hp-tabular">

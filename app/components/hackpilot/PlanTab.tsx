@@ -220,7 +220,7 @@ export function PlanTab({ ws }: { ws: WorkspaceOut }) {
 
       {days.length ? (
         <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6">
-          <div className="flex min-w-max gap-3">
+          <div className="flex gap-3">
             {days.map((day) => {
               const label = dayLabel(day);
               const tasks = ws.tasks.filter((t) => t.day === day).sort((a, b) => a.position - b.position);
@@ -244,7 +244,7 @@ export function PlanTab({ ws }: { ws: WorkspaceOut }) {
                     const task = ws.tasks.find((t) => t.id === id);
                     if (task && task.day !== day) update.mutate({ id, day });
                   }}
-                  className={`flex w-64 shrink-0 flex-col rounded-xl border p-3 transition-colors ${isToday ? "border-signal/60 bg-signal-soft/40" : "border-border bg-card"} ${overDay === day ? "ring-2 ring-signal/50" : ""} ${past ? "opacity-70" : ""}`}
+                  className={`flex min-w-52 flex-1 basis-0 shrink-0 flex-col rounded-xl border p-3 transition-colors ${isToday ? "border-signal/60 bg-signal-soft/40" : "border-border bg-card"} ${overDay === day ? "ring-2 ring-signal/50" : ""} ${past ? "opacity-70" : ""}`}
                 >
                   <header className="mb-2 flex items-baseline justify-between">
                     <span className="text-sm font-semibold">
