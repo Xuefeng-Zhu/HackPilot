@@ -388,7 +388,7 @@ async function repair(dir: string, failing: { label: string; output: string }, r
     if (r.cost != null) p.meta.cost = (p.meta.cost ?? 0) + r.cost;
     if (r.completionTokens != null) p.meta.completionTokens = (p.meta.completionTokens ?? 0) + r.completionTokens;
     const parsed = parseFileBlocks(r.text);
-    if (parsed.files.length) return { ...parsed, model: `${r.model} (${r.provider})` };
+    if (parsed.files.length) return { ...parsed, model: modelLabel(r.provider, r.model) };
     p.meta.calls?.push(`repair ${round}: ${modelLabel(r.provider, r.model)} returned no files`);
     skip.push(r.provider);
   }
