@@ -1,6 +1,6 @@
 allowBuilds:
   tesseract.js: true
-  node-pty: true
+  node-pty: false
   ffmpeg-static: true
   esbuild: true
 

@@ -18,13 +18,18 @@ export interface NavigationState {
   path?: string;
   publicPath?: string;
   threadId?: string;
+  /** Selected hackathon workspace on /hackathons/:id. */
+  hackathonId?: string;
+  /** Workspace tab: overview, ideas, plan, or checklist. */
+  tab?: string;
 }
 
 export function useNavigationState() {
   useAgentRouteState<NavigationState>({
     browserTabId: TAB_ID,
     requestSource: TAB_ID,
-    getNavigationState: ({ pathname }) => navigationStateForPath(pathname),
+    getNavigationState: ({ pathname, searchParams }) =>
+      navigationStateForPath(pathname, searchParams),
     getCommandPath: commandPathForNavigation,
   });
 }
@@ -62,18 +67,44 @@ function matchesPathPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-export function navigationStateForPath(pathname: string): NavigationState {
+export const HACKATHON_TABS = ["overview", "ideas", "plan", "checklist"];
+
+export function hackathonIdFromPath(pathname: string): string | null {
+  const encoded = pathname.match(/^\/hackathons\/([^/]+)/)?.[1];
+  if (!encoded) return null;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return null;
+  }
+}
+
+export function navigationStateForPath(
+  pathname: string,
+  searchParams?: URLSearchParams,
+): NavigationState {
   const threadId = threadIdFromPath(pathname);
+  const hackathonId = hackathonIdFromPath(pathname);
+  const rawTab = searchParams?.get("tab") ?? "";
+  const tab = hackathonId
+    ? HACKATHON_TABS.includes(rawTab)
+      ? rawTab
+      : "overview"
+    : undefined;
   return {
     view: viewForPath(pathname),
     path: pathname,
     publicPath: appPathFromLocalRoute(pathname),
     ...(threadId ? { threadId } : {}),
+    ...(hackathonId ? { hackathonId } : {}),
+    ...(tab ? { tab } : {}),
   };
 }
 
 function viewForPath(pathname: string): string {
   if (isChatPathname(pathname)) return "chat";
+  if (hackathonIdFromPath(pathname)) return "hackathon";
+  if (pathname.startsWith("/hackathons")) return "hackathons";
   if (pathname === HOME_PATH) return "home";
   if (pathname.startsWith("/database")) return "database";
   if (pathname.startsWith("/extensions")) return "extensions";
@@ -93,6 +124,8 @@ function pathForView(view?: string): string {
       return NEW_CHAT_PATH;
     case "home":
       return HOME_PATH;
+    case "hackathons":
+      return "/hackathons";
     case "database":
       return "/database";
     case "extensions":
@@ -111,6 +144,10 @@ function pathForView(view?: string): string {
 }
 
 export function pathForCommand(command: any): string {
+  if (command?.view === "hackathon" && typeof command?.hackathonId === "string") {
+    const tab = HACKATHON_TABS.includes(command?.tab) ? `?tab=${command.tab}` : "";
+    return `/hackathons/${encodeURIComponent(command.hackathonId)}${tab}`;
+  }
   const path = pathForView(command?.view);
   if (command?.view !== "chat" && command?.view !== "ask") return path;
   const threadId =
