@@ -86,6 +86,32 @@ CREATE INDEX IF NOT EXISTS hackathon_ideas_parent_idx ON hackathon_ideas (hackat
 CREATE INDEX IF NOT EXISTS hackathon_tasks_parent_idx ON hackathon_tasks (hackathon_id, day, position);
 CREATE INDEX IF NOT EXISTS hackathon_submission_items_parent_idx ON hackathon_submission_items (hackathon_id, position)`,
     },
+    {
+      version: 2,
+      name: "hackpilot-builds",
+      sql: `CREATE TABLE IF NOT EXISTS hackathon_builds (
+  id TEXT PRIMARY KEY,
+  hackathon_id TEXT NOT NULL REFERENCES hackathons(id) ON DELETE CASCADE,
+  idea_id TEXT,
+  idea_title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'running',
+  stage TEXT NOT NULL DEFAULT 'queued',
+  mode TEXT NOT NULL DEFAULT 'llm',
+  steps JSONB NOT NULL DEFAULT '[]'::jsonb,
+  files JSONB NOT NULL DEFAULT '[]'::jsonb,
+  meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+  rounds INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  error TEXT,
+  dir TEXT,
+  owner_email TEXT NOT NULL,
+  org_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (now()),
+  updated_at TEXT NOT NULL DEFAULT (now()),
+  finished_at TEXT
+);
+CREATE INDEX IF NOT EXISTS hackathon_builds_parent_idx ON hackathon_builds (hackathon_id, created_at)`,
+    },
   ],
   { table: "hackpilot_migrations" },
 );

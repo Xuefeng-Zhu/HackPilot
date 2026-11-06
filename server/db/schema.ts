@@ -5,6 +5,8 @@ import {
 import { sql } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 
+import type { BuildFile, BuildMeta, BuildStep } from "../../shared/build.js";
+
 import type { Criterion, IdeaScores, Prize } from "../../shared/hackpilot.js";
 
 /**
@@ -101,4 +103,38 @@ export const submissionItems = pgTable("hackathon_submission_items", {
   updatedAt: text("updated_at")
     .notNull()
     .default(sql`now()`),
+});
+
+/**
+ * A "Build it" run: the picked idea + plan turned into a starter app through a
+ * generate -> install -> typecheck -> build -> smoke test -> repair loop.
+ * Files live on disk under `dir`; this row is the progress record the UI polls.
+ */
+export const builds = pgTable("hackathon_builds", {
+  id: text("id").primaryKey(),
+  hackathonId: text("hackathon_id").notNull(),
+  ideaId: text("idea_id"),
+  ideaTitle: text("idea_title").notNull(),
+  /** "running" | "passed" | "failed" */
+  status: text("status").notNull().default("running"),
+  /** Current stage key, e.g. "generating", "installing", "repairing". */
+  stage: text("stage").notNull().default("queued"),
+  /** "llm" or "template" */
+  mode: text("mode").notNull().default("llm"),
+  steps: jsonb("steps").$type<BuildStep[]>().notNull().default([]),
+  files: jsonb("files").$type<BuildFile[]>().notNull().default([]),
+  meta: jsonb("meta").$type<BuildMeta>().notNull().default({}),
+  rounds: integer("rounds").notNull().default(0),
+  notes: text("notes"),
+  error: text("error"),
+  dir: text("dir"),
+  ownerEmail: text("owner_email").notNull(),
+  orgId: text("org_id"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`now()`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`now()`),
+  finishedAt: text("finished_at"),
 });
