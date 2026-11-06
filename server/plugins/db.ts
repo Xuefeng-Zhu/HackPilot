@@ -112,6 +112,13 @@ CREATE INDEX IF NOT EXISTS hackathon_submission_items_parent_idx ON hackathon_su
 );
 CREATE INDEX IF NOT EXISTS hackathon_builds_parent_idx ON hackathon_builds (hackathon_id, created_at)`,
     },
+    {
+      version: 3,
+      name: "hackpilot-milestones",
+      sql: `ALTER TABLE hackathons ADD COLUMN IF NOT EXISTS milestones JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE hackathon_tasks ADD COLUMN IF NOT EXISTS milestone TEXT;
+UPDATE hackathon_tasks SET milestone = CASE phase WHEN 'ideate' THEN 'idea' WHEN 'polish' THEN 'demo' WHEN 'record' THEN 'demo' WHEN 'submit' THEN 'submit' ELSE 'core' END WHERE milestone IS NULL`,
+    },
   ],
   { table: "hackpilot_migrations" },
 );

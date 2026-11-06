@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 
 import type { BuildFile, BuildMeta, BuildStep } from "../../shared/build.js";
+import type { Milestone } from "../../shared/milestones.js";
 
 import type { Criterion, IdeaScores, Prize } from "../../shared/hackpilot.js";
 
@@ -26,6 +27,8 @@ export const hackathons = pgTable("hackathons", {
   prizes: jsonb("prizes").$type<Prize[]>().notNull().default([]),
   rubric: jsonb("rubric").$type<Criterion[]>().notNull().default([]),
   notes: text("notes"),
+  /** Plan backbone: Idea locked, Core works, Demo-ready, Submitted. */
+  milestones: jsonb("milestones").$type<Milestone[]>().notNull().default([]),
   /** Plain text snapshot of the source page (truncated) for the agent. */
   sourceText: text("source_text"),
   /** How the record was filled: "llm", "heuristic", "seed", or "manual". */
@@ -71,6 +74,8 @@ export const tasks = pgTable("hackathon_tasks", {
   /** Calendar day `YYYY-MM-DD` in the plan's timezone. */
   day: text("day").notNull(),
   phase: text("phase").notNull().default("build"),
+  /** Milestone id the task hangs off ("idea" | "core" | "demo" | "submit"). */
+  milestone: text("milestone"),
   position: integer("position").notNull().default(0),
   done: boolean("done").notNull().default(false),
   /** "plan" (generated), "user", or "agent" */

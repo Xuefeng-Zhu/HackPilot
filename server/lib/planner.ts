@@ -1,6 +1,8 @@
 /**
- * Deterministic sprint planner. Produces a day-by-day plan from today to the
- * deadline day, shaped by the rubric, the chosen idea, and the submission
+ * Deterministic sprint planner. Hangs tasks off four milestones (Idea locked,
+ * Core works, Demo-ready, Submitted) whose targets scale with the event
+ * window, and gives every task a due day inside its milestone's segment. The
+ * plan is shaped by the rubric, the chosen idea, and the submission
  * checklist. The agent can then edit any task with `update-task`; this keeps
  * the baseline instant, free, and reproducible.
  */
@@ -9,11 +11,13 @@ import type {
   SubmissionKind,
   TaskPhase,
 } from "../../shared/hackpilot.js";
-import { addDaysToKey, daysBetweenKeys } from "../../shared/time.js";
+import { type Milestone, type MilestoneId } from "../../shared/milestones.js";
+import { addDaysToKey, dateKeyInZone, daysBetweenKeys } from "../../shared/time.js";
 
 export interface PlannedTask {
   title: string;
   phase: TaskPhase;
+  milestone: MilestoneId;
   day: string;
   notes?: string | undefined;
   estimateHours?: number | undefined;
@@ -31,20 +35,22 @@ interface PlanInput {
     status: string;
   }[];
   focus?: string | null | undefined;
+  milestones: Milestone[];
+  timezone: string;
+  now?: Date;
 }
 
 interface Template {
   title: string;
   phase: TaskPhase;
-  /** Position in the timeline, 0 (today) .. 1 (deadline day). */
+  milestone: MilestoneId;
+  /** Position inside the milestone's segment, 0 (segment start) .. 1 (milestone target). */
   at: number;
   hours?: number | undefined;
   notes?: string | undefined;
 }
 
 export function buildSprintPlan(input: PlanInput): PlannedTask[] {
-  const span = daysBetweenKeys(input.todayKey, input.deadlineKey);
-  const days = Math.max(1, span + 1);
   const idea = input.ideaTitle ? `“${input.ideaTitle}”` : "the chosen idea";
   const topCriteria = [...input.rubric]
     .sort((a, b) => b.weight - a.weight)
@@ -56,7 +62,8 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
     templates.push({
       title: "Pick the idea: compare the top cards on the idea board",
       phase: "ideate",
-      at: 0,
+      milestone: "idea",
+      at: 0.2,
       hours: 1,
       notes: "Score each idea against the rubric, then mark one as selected.",
     });
@@ -65,7 +72,8 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
     {
       title: `Write the pitch & demo story for ${idea}`,
       phase: "ideate",
-      at: 0,
+      milestone: "idea",
+      at: 0.9,
       hours: 1,
       notes: topCriteria.length
         ? `Lead with what judges weigh most: ${topCriteria.join(", ")}.`
@@ -74,38 +82,44 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
     {
       title: "Scaffold the app, data model, and core actions",
       phase: "build",
-      at: 0.12,
+      milestone: "core",
+      at: 0.15,
       hours: 3,
     },
     {
       title: `Build the core workflow end-to-end for ${idea}`,
       phase: "build",
-      at: 0.25,
+      milestone: "core",
+      at: 0.55,
       hours: 4,
     },
     {
       title: "Give the agent the same actions + clear instructions",
       phase: "build",
-      at: 0.38,
+      milestone: "core",
+      at: 0.9,
       hours: 2,
     },
     {
       title: "Second feature pass: the moment that makes the demo memorable",
       phase: "build",
-      at: 0.5,
+      milestone: "demo",
+      at: 0.15,
       hours: 3,
     },
-    { title: "Seed realistic demo data", phase: "build", at: 0.6, hours: 1 },
+    { title: "Seed realistic demo data", phase: "build", milestone: "demo", at: 0.3, hours: 1 },
     {
       title: "Polish pass: empty, loading, and error states",
       phase: "polish",
-      at: 0.68,
+      milestone: "demo",
+      at: 0.45,
       hours: 2,
     },
     {
       title: "Run the happy path end-to-end and fix the top bugs",
       phase: "polish",
-      at: 0.76,
+      milestone: "demo",
+      at: 0.6,
       hours: 2,
     },
   );
@@ -113,7 +127,8 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
     templates.push({
       title: `Focus: ${input.focus.trim().slice(0, 140)}`,
       phase: "build",
-      at: 0.45,
+      milestone: "core",
+      at: 0.7,
       hours: 2,
     });
   }
@@ -122,7 +137,8 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
     templates.push({
       title: "Rubric walkthrough: demo the app as a judge would",
       phase: "polish",
-      at: 0.8,
+      milestone: "demo",
+      at: 0.7,
       hours: 1,
       notes: rubricByWeight
         .map((c) => `${c.name}${c.weight ? ` (${c.weight}%)` : ""}${c.description ? ` — ${c.description}` : ""}`)
@@ -137,13 +153,15 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
       {
         title: "Script the demo video (problem → workflow → agent moment)",
         phase: "record",
-        at: 0.86,
+        milestone: "demo",
+        at: 0.8,
         hours: 1,
       },
       {
         title: "Record and upload the demo video",
         phase: "record",
-        at: 0.9,
+        milestone: "demo",
+        at: 1,
         hours: 2,
       },
     );
@@ -153,7 +171,8 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
     templates.push({
       title: item.label,
       phase: "submit",
-      at: 0.94,
+      milestone: "submit",
+      at: 0.5,
       hours: 1,
     });
   }
@@ -162,23 +181,88 @@ export function buildSprintPlan(input: PlanInput): PlannedTask[] {
       ? `Submit before ${input.deadlineLabel}`
       : "Submit the entry",
     phase: "submit",
+    milestone: "submit",
     at: 1,
     hours: 1,
     notes: "Leave buffer: aim to submit a few hours early.",
   });
 
-  return templates.map((t) => {
-    // Submission tasks land on the last day; everything else spreads out.
-    const index =
-      t.at >= 1 ? days - 1 : Math.min(days - 1, Math.round(t.at * (days - 1)));
-    return {
-      title: t.title,
-      phase: t.phase,
-      day: addDaysToKey(input.todayKey, index),
-      notes: t.notes,
-      estimateHours: t.hours,
-    };
-  });
+  return templates.map((t) => ({
+    title: t.title,
+    phase: t.phase,
+    milestone: t.milestone,
+    day: dayInMilestone(input.milestones, t.milestone, t.at, input.timezone, input.now),
+    notes: t.notes,
+    estimateHours: t.hours,
+  }));
+}
+
+/**
+ * Calendar day for a task at position `at` (0..1) inside its milestone's
+ * segment: from the previous milestone's target (or now) to this one's.
+ * Never before today.
+ */
+export function dayInMilestone(
+  milestones: Milestone[],
+  id: MilestoneId,
+  at: number,
+  timezone: string,
+  now = new Date(),
+): string {
+  const idx = milestones.findIndex((m) => m.id === id);
+  const m = milestones[idx];
+  const todayKey = dateKeyInZone(now, timezone);
+  if (!m) return todayKey;
+  const end = Date.parse(m.dueAt);
+  const prev = idx > 0 ? Date.parse(milestones[idx - 1]!.dueAt) : now.getTime();
+  const start = Math.max(now.getTime(), Math.min(prev, end));
+  const ms = start + (end - start) * Math.min(1, Math.max(0, at));
+  const key = dateKeyInZone(new Date(Math.min(ms, end)), timezone);
+  return key < todayKey ? todayKey : key;
+}
+
+/**
+ * Re-slot undone tasks after milestones moved or the builder fell behind:
+ * overdue tasks (before today) and tasks due after their milestone's target
+ * move into their milestone's remaining segment, lightest days first.
+ * Returns id → new day for tasks that moved.
+ */
+export function rebalanceToMilestones(
+  tasks: { id: string; day: string; done: boolean; milestone: MilestoneId }[],
+  milestones: Milestone[],
+  timezone: string,
+  now = new Date(),
+): Map<string, string> {
+  const todayKey = dateKeyInZone(now, timezone);
+  const moves = new Map<string, string>();
+  const load = new Map<string, number>();
+  for (const t of tasks) if (!t.done) load.set(t.day, (load.get(t.day) ?? 0) + 1);
+  for (const m of milestones) {
+    const first = dayInMilestone(milestones, m.id, 0, timezone, now);
+    const last = m.day < todayKey ? todayKey : m.day;
+    const span = Math.max(0, daysBetweenKeys(first, last));
+    const window = Array.from({ length: span + 1 }, (_, i) => addDaysToKey(first, i));
+    const stranded = tasks
+      .filter((t) => !t.done && t.milestone === m.id && (t.day < todayKey || t.day > last))
+      .sort((a, b) => a.day.localeCompare(b.day));
+    for (const t of stranded) {
+      let best = window[0] ?? todayKey;
+      let bestLoad = Number.POSITIVE_INFINITY;
+      for (const day of window) {
+        const l = load.get(day) ?? 0;
+        if (l < bestLoad) {
+          best = day;
+          bestLoad = l;
+        }
+      }
+      if (best !== t.day) {
+        moves.set(t.id, best);
+        load.set(t.day, Math.max(0, (load.get(t.day) ?? 1) - 1));
+        load.set(best, (load.get(best) ?? 0) + 1);
+      }
+    }
+  }
+  return moves;
 }
 
 /**

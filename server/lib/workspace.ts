@@ -8,12 +8,39 @@ import {
   scoreCoverage,
   weightedScore,
 } from "../../shared/hackpilot.js";
+import {
+  computeMilestones,
+  isMilestoneId,
+  type Milestone,
+  milestoneForPhase,
+} from "../../shared/milestones.js";
 import { countdownLabel, toUtcIso } from "../../shared/time.js";
 import { getDb, schema } from "../db/index.js";
 
 export type ShareRole = "viewer" | "editor" | "admin";
 
 export const nowIso = () => toUtcIso(new Date());
+
+/** Window start for milestone scaling: when the hackathon entered HackPilot. */
+export function planStartAt(row: { importedAt: string | null; createdAt: string }) {
+  return row.importedAt ?? row.createdAt;
+}
+
+/**
+ * Stored milestones, or ones computed on the fly for hackathons planned before
+ * milestones existed (persisted on the next plan-sprint).
+ */
+export function planMilestones(row: {
+  milestones?: Milestone[] | null;
+  deadlineAt: string | null;
+  timezone: string;
+  importedAt: string | null;
+  createdAt: string;
+}): Milestone[] {
+  if (row.milestones?.length) return row.milestones;
+  if (!row.deadlineAt) return [];
+  return computeMilestones({ startAt: planStartAt(row), deadlineAt: row.deadlineAt, timezone: row.timezone });
+}
 
 export function hackathonLink(id: string, tab?: string) {
   return {
@@ -67,6 +94,7 @@ export function serializeHackathon(row: HackathonRow, includeSource = false) {
     prizes: row.prizes ?? [],
     rubric: row.rubric ?? [],
     notes: row.notes,
+    milestones: planMilestones(row),
     extraction: row.extraction,
     importedAt: row.importedAt,
     updatedAt: row.updatedAt,
@@ -131,6 +159,7 @@ export function serializeTask(t: typeof schema.tasks.$inferSelect) {
     notes: t.notes,
     day: t.day,
     phase: t.phase,
+    milestone: isMilestoneId(t.milestone) ? t.milestone : milestoneForPhase(t.phase),
     position: t.position,
     done: t.done,
     source: t.source,

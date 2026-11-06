@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { criterionSchema, prizeSchema } from "./hackpilot.js";
+import { MILESTONE_IDS, milestoneSchema } from "./milestones.js";
 
 /** Output contracts shared by actions (validation) and the UI (types). */
 
@@ -15,6 +16,7 @@ export const hackathonOut = z.object({
   prizes: z.array(prizeSchema),
   rubric: z.array(criterionSchema),
   notes: z.string().nullable(),
+  milestones: z.array(milestoneSchema),
   extraction: z.string(),
   importedAt: z.string().nullable(),
   updatedAt: z.string(),
@@ -44,6 +46,7 @@ export const taskOut = z.object({
   notes: z.string().nullable(),
   day: z.string(),
   phase: z.string(),
+  milestone: z.enum(MILESTONE_IDS),
   position: z.number(),
   done: z.boolean(),
   source: z.string(),

@@ -31,3 +31,10 @@ Use `adding-a-feature` for functional parity and `frontend-design` for a user-fa
 Before building common workspace or agent UI, read `agent-native-toolkit`; for supported customization, read `customizing-agent-native`.
 
 - Guarded verification: run `pnpm agent-native:doctor`; fix findings before done.
+
+## HackPilot actions worth knowing
+
+- `plan-sprint` (fresh | rebalance) builds a milestone plan: Idea locked (~10% of the window from import to deadline), Core works (~55%), Demo-ready (~85%), Submitted (deadline). Targets scale with the event length, never land in the past, and rebalance re-slots missed milestones. Milestones live on `hackathons.milestones`; tasks carry `milestone` + `day`.
+- `update-task` accepts `milestone` ("idea" | "core" | "demo" | "submit") to move a task; the due day is pulled inside the new milestone unless `day` is passed.
+- `build-project` ("Build it") generates a Vite + React + TS starter from the selected idea + plan, then runs npm install → tsc → vite build → smoke test with up to 3 model repair rounds, zips the source (download: `/api/builds/:id/zip`), and checks off the Core works tasks. It returns while running; poll `get-build`. `mode: "template"` is the deterministic, model-free fallback.
+- LLM calls go through `server/lib/llm.ts`: NVIDIA build first (`NVIDIA_MODEL`, `NVIDIA_BUILD_MODEL`), OpenRouter fallback (`OPENROUTER_MODEL`, `OPENROUTER_BUILD_MODEL`). See `.env.example`.

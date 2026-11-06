@@ -12,7 +12,7 @@ const boolParam = z.union([z.boolean(), z.enum(["true", "false"])]);
 
 export default defineAction({
   description:
-    'Build it: turn the hackathon\'s selected idea (or ideaId) and sprint plan into a real starter app (Vite + React + TypeScript). Runs generate -> npm install -> typecheck -> vite build -> smoke test, feeding failures back to the model for up to 3 repair rounds, then zips the source and checks off the plan tasks it covers ("Scaffold…", "Build the core workflow…"). Starts in the background and returns the build immediately (status "running"); poll get-build until status is "passed" or "failed" (usually 1-3 minutes). mode "template" skips the model and writes a deterministic starter that always passes. If a build is already running for this hackathon it returns that one.',
+    'Build it: turn the hackathon\'s selected idea (or ideaId) and sprint plan into a real starter app (Vite + React + TypeScript). Runs generate -> npm install -> typecheck -> vite build -> smoke test, feeding failures back to the model for up to 3 repair rounds, then zips the source and checks off the plan tasks under the "Core works" milestone. Starts in the background and returns the build immediately (status "running"); poll get-build until status is "passed" or "failed" (usually 1-3 minutes). mode "template" skips the model and writes a deterministic starter that always passes. If a build is already running for this hackathon it returns that one.',
   schema: z.object({
     hackathonId: z.string().describe("Hackathon id"),
     ideaId: z.string().optional().describe("Idea to build; defaults to the selected idea"),

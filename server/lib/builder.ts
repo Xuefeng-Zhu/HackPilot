@@ -22,6 +22,7 @@ import {
   type BuildStage,
   type BuildStep,
 } from "../../shared/build.js";
+import { isMilestoneId, milestoneForPhase } from "../../shared/milestones.js";
 import { getDb, schema } from "../db/index.js";
 import {
   DEFAULT_TSCONFIG,
@@ -426,11 +427,14 @@ async function loadInput(buildId: string) {
 async function markProgress(hackathonId: string, buildId: string) {
   const db = getDb();
   const tasks = await db
-    .select({ id: schema.tasks.id, title: schema.tasks.title, done: schema.tasks.done })
+    .select({ id: schema.tasks.id, title: schema.tasks.title, done: schema.tasks.done, milestone: schema.tasks.milestone, phase: schema.tasks.phase })
     .from(schema.tasks)
     .where(eq(schema.tasks.hackathonId, hackathonId))
     .limit(500);
-  const covered = tasks.filter((t) => !t.done && /^(scaffold|set ?up|bootstrap)\b|^build the core workflow/i.test(t.title));
+  // Everything under the "Core works" milestone: the starter proves the core runs.
+  const covered = tasks.filter(
+    (t) => !t.done && (isMilestoneId(t.milestone) ? t.milestone : milestoneForPhase(t.phase)) === "core",
+  );
   const note = `Done by Build it (build ${buildId.slice(0, 8)}): starter app passed typecheck, build, and smoke test.`;
   if (covered.length) {
     await db
