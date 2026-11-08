@@ -33,7 +33,7 @@ import {
   templateFiles,
 } from "./build-template.js";
 import { parseFileBlocks } from "./file-blocks.js";
-import { chatWithFallback, type ChatMessage, providerChain, selectedOpenRouterBuildModel } from "./llm.js";
+import { chatWithFallback, type ChatMessage, providerChain } from "./llm.js";
 import { nowIso } from "./workspace.js";
 
 export const BUILD_ROOT = path.resolve(
@@ -354,8 +354,7 @@ async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress)
     if (!chain.some((t) => !skip.includes(t.provider))) skip.length = 0;
     const r = await chatWithFallback(messages, {
       purpose: "build",
-      maxTokens: 16_000,
-      timeoutMs: 240_000,
+      timeoutMs: 480_000,
       firstTokenMs: 60_000,
       skip,
     });
@@ -382,12 +381,11 @@ async function repair(dir: string, failing: { label: string; output: string }, r
       content: `Failing step: ${failing.label}\nOutput:\n${clip(failing.output, 6000)}\n\nCurrent files (tsconfig.json, vite.config.ts and package.json toolchain versions are fixed; change source files):\n${clip(sources, 60_000)}`,
     },
   ];
-  // Rounds 2+ escalate to the fallback provider (a stronger paid model).
-  const skip: ("nvidia" | "openrouter")[] = round >= 2 ? ["nvidia"] : [];
+  const skip: ("nvidia" | "openrouter")[] = [];
   for (let attempt = 0; attempt < 2; attempt++) {
     const chain = await providerChain("build");
     if (!chain.some((t) => !skip.includes(t.provider))) skip.length = 0;
-    const r = await chatWithFallback(messages, { purpose: "build", maxTokens: 12_000, timeoutMs: 180_000, firstTokenMs: 60_000, skip });
+    const r = await chatWithFallback(messages, { purpose: "build", timeoutMs: 300_000, firstTokenMs: 60_000, skip });
     p.meta.calls?.push(...r.attempts.map((a) => `repair ${round}: ${a}`));
     if (r.cost != null) p.meta.cost = (p.meta.cost ?? 0) + r.cost;
     if (r.completionTokens != null) p.meta.completionTokens = (p.meta.completionTokens ?? 0) + r.completionTokens;
@@ -485,9 +483,7 @@ async function pipeline(buildId: string) {
   let files: GenFile[] = [];
   const hasLlm = (await providerChain("build")).length > 0;
   if (mode === "llm" && !hasLlm) {
-    await p.info("generating", "No build model available", selectedOpenRouterBuildModel()
-      ? "OPENROUTER_BUILD_MODEL requires an enabled OpenRouter provider and OPENROUTER_API_KEY. Using the deterministic starter template instead."
-      : "No LLM provider is configured. Using the deterministic starter template instead.");
+    await p.info("generating", "No build model available", "Build it requires an enabled OpenRouter provider and OPENROUTER_API_KEY. Using the deterministic starter template instead.");
     mode = "template";
   }
   if (mode === "llm") {

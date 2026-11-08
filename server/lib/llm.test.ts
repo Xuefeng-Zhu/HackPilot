@@ -16,83 +16,108 @@ function mockProviders() {
   env("OPENROUTER_BUILD_MODEL", "");
 }
 
+const stream = (content = "output") => new Response(
+  `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`,
+);
+
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
 
 describe("build provider selection", () => {
-  it("keeps NVIDIA first by default and for fast calls", async () => {
+  it("selects DeepSeek on OpenRouter for builds and leaves fast calls NVIDIA-first", async () => {
     mockProviders();
-    expect((await providerChain("build")).map((t) => t.provider)).toEqual(["nvidia", "openrouter"]);
-    env("OPENROUTER_BUILD_MODEL", "z-ai/glm-5.3");
+    expect((await providerChain("build")).map(({ provider, model }) => ({ provider, model }))).toEqual([
+      { provider: "openrouter", model: "deepseek/deepseek-v4.1-flash-1017" },
+    ]);
     expect((await providerChain("fast")).map((t) => t.provider)).toEqual(["nvidia", "openrouter"]);
   });
 
-  it("selects only the explicit OpenRouter model for builds", async () => {
+  it("honors an explicit OpenRouter build model and treats blank as unset", async () => {
     mockProviders();
     env("OPENROUTER_BUILD_MODEL", "  z-ai/glm-5.3  ");
-    expect((await providerChain("build")).map(({ provider, model }) => ({ provider, model })))
-      .toEqual([{ provider: "openrouter", model: "z-ai/glm-5.3" }]);
-  });
-
-  it("treats a blank build model as unset", async () => {
-    mockProviders();
+    expect((await providerChain("build")).map(({ provider, model }) => ({ provider, model }))).toEqual([
+      { provider: "openrouter", model: "z-ai/glm-5.3" },
+    ]);
     env("OPENROUTER_BUILD_MODEL", "  ");
-    expect((await providerChain("build")).map((t) => t.provider)).toEqual(["nvidia", "openrouter"]);
+    expect((await providerChain("build"))[0]?.model).toBe("deepseek/deepseek-v4.1-flash-1017");
   });
 
-  it("does not silently select NVIDIA if OpenRouter is missing or disabled", async () => {
+  it("does not silently select NVIDIA when OpenRouter is missing or disabled", async () => {
     mockProviders();
-    env("OPENROUTER_BUILD_MODEL", "z-ai/glm-5.3");
     env("OPENROUTER_API_KEY", "");
     expect(await providerChain("build")).toEqual([]);
-    await expect(chatWithFallback([], { purpose: "build" })).rejects.toThrow("OPENROUTER_BUILD_MODEL requires");
+    await expect(chatWithFallback([], { purpose: "build" })).rejects.toThrow("OPENROUTER_API_KEY");
     env("OPENROUTER_API_KEY", "or-test");
     env("HACKPILOT_DISABLE_PROVIDERS", "openrouter");
     expect(await providerChain("build")).toEqual([]);
   });
 });
 
-describe("OpenRouter GLM build completions", () => {
-  it("requests low reasoning and returns content, not reasoning", async () => {
+describe("streamed model requests", () => {
+  it("uses low reasoning and no output-token cap for DeepSeek builds, including when a caller supplies a cap", async () => {
     mockProviders();
-    env("OPENROUTER_BUILD_MODEL", "z-ai/glm-5.3");
     const fetchMock = vi.fn(async () => new Response([
-      'data: {"choices":[{"delta":{"reasoning":"private reasoning"}}]}\n\n',
+      'data: {"choices":[{"delta":{"reasoning":"private reasoning", "content":null}}]}\n\n',
       'data: {"choices":[{"delta":{"content":"=== FILE: src/App.tsx ==="}}]}\n\n',
       'data: {"choices":[{"delta":{"content":"\\nexport default 1"}}],"usage":{"completion_tokens":42,"cost":0.012}}\n\n',
       'data: [DONE]\n\n',
-    ].join(""), { status: 200 }));
+    ].join("")));
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await chatWithFallback([{ role: "user", content: "Build" }], { purpose: "build" });
+    const result = await chatWithFallback([{ role: "user", content: "Build" }], { purpose: "build", maxTokens: 123 });
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
     expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
-    expect(JSON.parse(init.body as string)).toMatchObject({ model: "z-ai/glm-5.3", reasoning: { effort: "low" }, stream: true });
+    expect(body).toMatchObject({ model: "deepseek/deepseek-v4.1-flash-1017", reasoning: { effort: "low" }, stream: true });
+    expect(body).not.toHaveProperty("max_tokens");
     expect(result).toMatchObject({ provider: "openrouter", text: "=== FILE: src/App.tsx ===\nexport default 1", completionTokens: 42, cost: 0.012 });
+  });
+
+  it("keeps GLM override reasoning and omits the build cap", async () => {
+    mockProviders();
+    env("OPENROUTER_BUILD_MODEL", "z-ai/glm-5.3");
+    const fetchMock = vi.fn(async () => stream());
+    vi.stubGlobal("fetch", fetchMock);
+    await chatWithFallback([], { purpose: "build" });
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.reasoning).toEqual({ effort: "low" });
+    expect(body).not.toHaveProperty("max_tokens");
   });
 
   it("rejects a reasoning-only response with no file content", async () => {
     mockProviders();
-    env("OPENROUTER_BUILD_MODEL", "z-ai/glm-5.3");
     vi.stubGlobal("fetch", vi.fn(async () => new Response(
       'data: {"choices":[{"delta":{"reasoning":"thinking", "content":null}}]}\n\ndata: [DONE]\n\n',
     )));
     await expect(chatWithFallback([], { purpose: "build" })).rejects.toThrow("empty response");
   });
 
-  it("retains NVIDIA-to-OpenRouter fallback when the build model is unset", async () => {
+  it("does not change DeepSeek reasoning settings for fast calls", async () => {
+    mockProviders();
+    env("HACKPILOT_DISABLE_PROVIDERS", "nvidia");
+    env("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash-1017");
+    const fetchMock = vi.fn(async () => stream());
+    vi.stubGlobal("fetch", fetchMock);
+    await chatWithFallback([], { purpose: "fast", maxTokens: 321 });
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body).not.toHaveProperty("reasoning");
+    expect(body.max_tokens).toBe(321);
+  });
+
+  it("preserves the fast-call token cap and NVIDIA-to-OpenRouter fallback", async () => {
     mockProviders();
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
-      .mockResolvedValueOnce(new Response('data: {"choices":[{"delta":{"content":"fallback"}}]}\n\ndata: [DONE]\n\n'));
+      .mockResolvedValueOnce(stream("fallback"));
     vi.stubGlobal("fetch", fetchMock);
-
-    const result = await chatWithFallback([{ role: "user", content: "Build" }], { purpose: "build" });
-    expect(result.provider).toBe("openrouter");
-    expect(result.text).toBe("fallback");
+    const result = await chatWithFallback([], { purpose: "fast", maxTokens: 321 });
+    expect(result).toMatchObject({ provider: "openrouter", text: "fallback" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(fetchMock.mock.calls[1]![1].body)).not.toHaveProperty("reasoning");
+    expect(JSON.parse(fetchMock.mock.calls[0]![1].body).max_tokens).toBe(321);
+    expect(JSON.parse(fetchMock.mock.calls[1]![1].body).max_tokens).toBe(321);
   });
 });
