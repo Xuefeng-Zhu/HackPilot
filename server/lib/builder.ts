@@ -33,7 +33,7 @@ import {
   templateFiles,
 } from "./build-template.js";
 import { parseFileBlocks } from "./file-blocks.js";
-import { chatWithFallback, type ChatMessage, providerChain } from "./llm.js";
+import { chatWithFallback, type ChatMessage, providerChain, selectedOpenRouterBuildModel } from "./llm.js";
 import { nowIso } from "./workspace.js";
 
 export const BUILD_ROOT = path.resolve(
@@ -297,7 +297,8 @@ then one final line: NOTES: <one sentence on what works>`;
 
 const REPAIR_SYSTEM = `You fix a Vite + React 18 + TypeScript (strict) starter app so that
   npx tsc --noEmit && npx vite build && npx tsx smoke.test.ts
-all pass. You get the failing step's output and every source file. Fix the root cause (prefer fixing the code over weakening the test unless the test expectation is clearly wrong). Return ONLY the files you change, each complete, as
+all pass. You get the failing step's output and every source file. Fix the root cause. For a failing smoke test, compare the assertion, its inputs, the implementation, and the intended behavior. If the implementation is correct and the test's expected value is wrong, correct the expectation in smoke.test.ts; do not change correct application logic just to match a mistaken test. If the implementation is wrong, fix the implementation. Preserve meaningful assertions and coverage; do not remove, skip, or weaken tests merely to make them pass.
+Return ONLY the files you change, each complete, as
 === FILE: relative/path ===
 <full new content>
 === END FILE ===
@@ -348,6 +349,9 @@ async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress)
   ];
   const skip: ("nvidia" | "openrouter")[] = [];
   for (let attempt = 0; attempt < 2; attempt++) {
+    // Retry the selected provider if unusable output exhausted the chain.
+    const chain = await providerChain("build");
+    if (!chain.some((t) => !skip.includes(t.provider))) skip.length = 0;
     const r = await chatWithFallback(messages, {
       purpose: "build",
       maxTokens: 16_000,
@@ -481,7 +485,9 @@ async function pipeline(buildId: string) {
   let files: GenFile[] = [];
   const hasLlm = (await providerChain("build")).length > 0;
   if (mode === "llm" && !hasLlm) {
-    await p.info("generating", "No model configured", "Using the deterministic starter template instead.");
+    await p.info("generating", "No build model available", selectedOpenRouterBuildModel()
+      ? "OPENROUTER_BUILD_MODEL requires an enabled OpenRouter provider and OPENROUTER_API_KEY. Using the deterministic starter template instead."
+      : "No LLM provider is configured. Using the deterministic starter template instead.");
     mode = "template";
   }
   if (mode === "llm") {

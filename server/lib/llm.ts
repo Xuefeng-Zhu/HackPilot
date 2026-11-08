@@ -2,7 +2,8 @@
  * Server-side LLM calls for HackPilot actions.
  *
  * Provider chain (first configured provider wins, the next one takes over on
- * an error, 404/410 model-not-available, 429, or timeout):
+ * an error, 404/410 model-not-available, 429, or timeout). An explicitly set
+ * OPENROUTER_BUILD_MODEL selects OpenRouter alone for build calls:
  *
  *   1. NVIDIA build (integrate.api.nvidia.com, OpenAI-compatible)
  *      key `NVIDIA_API_KEY`; model `NVIDIA_MODEL` for fast structured calls,
@@ -58,6 +59,8 @@ async function resolveKey(name: string): Promise<string | null> {
 
 const env = (name: string) => process.env[name]?.trim() || undefined;
 
+export const selectedOpenRouterBuildModel = () => env("OPENROUTER_BUILD_MODEL");
+
 export function modelFor(provider: ProviderId, purpose: Purpose): string {
   if (provider === "nvidia") {
     return purpose === "build"
@@ -75,7 +78,8 @@ export async function providerChain(purpose: Purpose): Promise<ProviderTarget[]>
   const disabled = new Set(
     (env("HACKPILOT_DISABLE_PROVIDERS") ?? "").split(",").map((s) => s.trim()),
   );
-  const nv = disabled.has("nvidia") ? null : await resolveKey(NVIDIA_KEY);
+  const useOpenRouterBuild = purpose === "build" && !!selectedOpenRouterBuildModel();
+  const nv = useOpenRouterBuild || disabled.has("nvidia") ? null : await resolveKey(NVIDIA_KEY);
   if (nv) {
     chain.push({ provider: "nvidia", model: modelFor("nvidia", purpose), apiKey: nv, baseURL: NVIDIA_BASE_URL });
   }
@@ -234,6 +238,11 @@ async function streamChat(
         ...(t.provider === "openrouter" ? { usage: { include: true } } : { stream_options: { include_usage: true } }),
         ...(opts.jsonObject ? { response_format: { type: "json_object" } } : {}),
         ...(t.provider === "nvidia" ? nvidiaExtraBody() : {}),
+        // GLM 5.3 is a reasoning model. Ask OpenRouter to limit reasoning so
+        // the completion has enough time and tokens to produce its files.
+        ...(t.provider === "openrouter" && t.model.toLowerCase().split(":")[0] === "z-ai/glm-5.3"
+          ? { reasoning: { effort: "low" } }
+          : {}),
       }),
     });
     if (!res.ok || !res.body) {
@@ -308,7 +317,12 @@ export async function chatWithFallback(
   },
 ): Promise<ChatResult> {
   const chain = (await providerChain(opts.purpose)).filter((t) => !opts.skip?.includes(t.provider));
-  if (!chain.length) throw new Error("No LLM provider is configured (NVIDIA_API_KEY / OPENROUTER_API_KEY).");
+  if (!chain.length) {
+    if (opts.purpose === "build" && selectedOpenRouterBuildModel() && !opts.skip?.includes("openrouter")) {
+      throw new Error("OPENROUTER_BUILD_MODEL requires an enabled OpenRouter provider and OPENROUTER_API_KEY.");
+    }
+    throw new Error("No LLM provider is configured or available (NVIDIA_API_KEY / OPENROUTER_API_KEY).");
+  }
   const attempts: string[] = [];
   for (const target of chain) {
     opts.onAttempt?.({ provider: target.provider, model: target.model });
