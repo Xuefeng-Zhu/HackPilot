@@ -1,7 +1,7 @@
 import { defineAction } from "@agent-native/core/action";
 import { readAppState } from "@agent-native/core/application-state";
 import { accessFilter } from "@agent-native/core/sharing";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
@@ -45,6 +45,25 @@ export default defineAction({
           ...row,
           next: "Call get-hackathon for ideas, tasks, and checklist.",
         };
+        if ((navigation as { tab?: unknown }).tab === "plan") {
+          const { builds } = schema;
+          const [build] = await getDb()
+            .select({ id: builds.id, status: builds.status, stage: builds.stage, mode: builds.mode, meta: builds.meta })
+            .from(builds)
+            .where(eq(builds.hackathonId, row.id))
+            .orderBy(desc(builds.createdAt))
+            .limit(1);
+          if (build) {
+            screen.build = {
+              id: build.id,
+              status: build.status,
+              stage: build.stage,
+              mode: build.mode,
+              sourceBuildId: build.meta?.sourceBuildId,
+              next: "Call get-build for check logs and the ZIP download.",
+            };
+          }
+        }
       }
     }
 

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
 import { serializeBuild } from "../server/lib/build-serialize.js";
-import { reapInterrupted, startBuild, waitForBuild } from "../server/lib/builder.js";
+import { reapInterrupted, startBuild, waitForBuild, withBuildSlot } from "../server/lib/builder.js";
 import { hackathonLink, nowIso, requireHackathon } from "../server/lib/workspace.js";
 import { buildOut } from "../shared/build.js";
 
@@ -30,9 +30,9 @@ export default defineAction({
   run: async (args, ctx) => {
     const row = await requireHackathon(args.hackathonId, "editor");
     const db = getDb();
-    const active = await reapInterrupted(row.id);
-    let buildId = active;
-    if (!buildId) {
+    const buildId = await withBuildSlot(row.id, async () => {
+      const active = await reapInterrupted(row.id);
+      if (active) return active;
       const [idea] = await db
         .select()
         .from(schema.ideas)
@@ -52,10 +52,10 @@ export default defineAction({
           { errorCode: "no_idea", statusCode: 400 },
         );
       }
-      buildId = crypto.randomUUID();
+      const id = crypto.randomUUID();
       noteExternalWrite("local-disk");
       await db.insert(schema.builds).values({
-        id: buildId,
+        id,
         hackathonId: row.id,
         ideaId: idea.id,
         ideaTitle: idea.title,
@@ -66,8 +66,9 @@ export default defineAction({
         ownerEmail: ctx?.userEmail ?? row.ownerEmail,
         orgId: row.orgId,
       });
-      startBuild(buildId);
-    }
+      startBuild(id);
+      return id;
+    });
     if (args.wait === true || args.wait === "true") await waitForBuild(buildId, 240_000);
     const [b] = await db.select().from(schema.builds).where(eq(schema.builds.id, buildId)).limit(1);
     if (!b) fail("The build record disappeared.", { errorCode: "not_found", statusCode: 500 });

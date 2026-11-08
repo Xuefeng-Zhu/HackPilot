@@ -16,14 +16,15 @@ import {
   IconInfoCircle,
   IconLoader2,
   IconRobot,
+  IconUpload,
   IconX,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import type { BuildOut, BuildStep } from "@shared/build";
+import { buildDownloadUrl, MAX_FUSION_ARCHIVE_BYTES, type BuildOut, type BuildStep } from "@shared/build";
 import type { WorkspaceOut } from "@shared/outputs";
 
 import { askPilot } from "./ask-pilot";
@@ -32,6 +33,7 @@ import { workspaceKey } from "./workspace-cache";
 const STAGE_LABEL: Record<string, string> = {
   queued: "Queued",
   generating: "Generating code",
+  importing: "Importing ZIP",
   installing: "Installing",
   typechecking: "Typechecking",
   building: "Building",
@@ -41,9 +43,24 @@ const STAGE_LABEL: Record<string, string> = {
   done: "Passed",
   failed: "Failed",
 };
-const PIPELINE = ["generating", "installing", "typechecking", "building", "testing", "packaging"] as const;
+const CHECK_STAGES = ["installing", "typechecking", "building", "testing", "packaging"] as const;
 
 const secs = (ms?: number) => (ms == null ? "" : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(ms < 10_000 ? 1 : 0)} s`);
+
+function readZipArchive(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = typeof reader.result === "string" ? reader.result : "";
+      const start = data.indexOf(",");
+      if (start < 0) reject(new Error("Could not read the ZIP."));
+      else resolve(data.slice(start + 1));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.onabort = () => reject(new Error("ZIP reading was interrupted."));
+    reader.readAsDataURL(file);
+  });
+}
 
 function StepIcon({ status }: { status: BuildStep["status"] }) {
   if (status === "running") return <IconLoader2 className="size-4 text-signal motion-safe:animate-spin" />;
@@ -66,12 +83,13 @@ function Elapsed({ baseMs, running }: { baseMs: number; running: boolean }) {
 }
 
 function Pipeline({ build }: { build: BuildOut }) {
+  const stages = [build.mode === "fusion" ? "importing" : "generating", ...CHECK_STAGES];
   const reached = new Set(build.steps.map((s) => s.stage));
   const failedStage = build.status === "failed" ? [...build.steps].reverse().find((s) => s.status === "fail")?.stage : undefined;
   return (
     <ol className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="Build pipeline">
-      {PIPELINE.map((stage, i) => {
-        const active = build.status === "running" && (build.stage === stage || (stage === "generating" && build.stage === "queued"));
+      {stages.map((stage, i) => {
+        const active = build.status === "running" && (build.stage === stage || (i === 0 && build.stage === "queued"));
         const repairing = build.status === "running" && build.stage === "repairing" && stage === "testing";
         const done = build.status === "passed" || (reached.has(stage) && !active && failedStage !== stage);
         const failed = failedStage === stage;
@@ -120,6 +138,8 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
   const [showFiles, setShowFiles] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewNonce, setPreviewNonce] = useState(0);
+  const [readingArchive, setReadingArchive] = useState(false);
+  const archiveInput = useRef<HTMLInputElement>(null);
 
   const { data } = useActionQuery(
     "get-build",
@@ -128,25 +148,66 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
   );
   const build = data?.build ?? null;
   const running = build?.status === "running";
+  const fusion = build?.mode === "fusion";
+  const passedBuildId = build?.status === "passed" && build.downloadUrl ? build.id : undefined;
+  const fusionSourceId = passedBuildId ?? (fusion ? build.meta.sourceBuildId : undefined);
+  const originalZip = fusionSourceId ? buildDownloadUrl(fusionSourceId) : null;
+  const downloadUrl = build?.downloadUrl ?? originalZip;
 
   // When a run finishes, the plan and checklist changed underneath us.
   const lastStatus = useRef(build?.status);
   useEffect(() => {
     if (lastStatus.current === "running" && build && build.status !== "running") {
       void queryClient.invalidateQueries({ queryKey: workspaceKey(h.id) });
-      if (build.status === "passed") toast.success(`“${build.ideaTitle}” builds and passes its smoke test.`);
-      else toast.error("The build didn't pass. Open the log to see why.");
+      if (build.status === "passed") {
+        toast.success(build.mode === "fusion" ? "The Fusion ZIP passed verification." : `“${build.ideaTitle}” builds and passes its smoke test.`);
+      } else {
+        toast.error(build.mode === "fusion" ? "Fusion verification failed. Open the log to see why." : "The build didn't pass. Open the log to see why.");
+      }
     }
     lastStatus.current = build?.status;
   }, [build, h.id, queryClient]);
 
+  function showRun(nextBuild: BuildOut) {
+    queryClient.setQueryData(["action", "get-build", { hackathonId: h.id }], { build: nextBuild, file: null });
+    setShowLog(true);
+  }
+
   const start = useActionMutation("build-project", {
-    onSuccess: (b) => {
-      queryClient.setQueryData(["action", "get-build", { hackathonId: h.id }], { build: b, file: null });
-      setShowLog(true);
-    },
+    onSuccess: showRun,
     onError: (e) => toast.error(actionErrorMessage(e) ?? "Could not start the build."),
   });
+  const verify = useActionMutation("verify-fusion-build", {
+    onSuccess: (nextBuild) => {
+      setShowPreview(false);
+      showRun(nextBuild);
+    },
+    onError: (e) => toast.error(actionErrorMessage(e) ?? "Could not start Fusion verification."),
+  });
+  const importing = readingArchive || verify.isPending;
+
+  async function importArchive(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (!file || !fusionSourceId || running || start.isPending || importing) return;
+    if (!file.name.toLowerCase().endsWith(".zip") || file.size === 0) {
+      toast.error("Choose a nonempty ZIP downloaded from Fusion.");
+      return;
+    }
+    if (file.size > MAX_FUSION_ARCHIVE_BYTES) {
+      toast.error(`Choose a ZIP of ${MAX_FUSION_ARCHIVE_BYTES / (1024 * 1024)} MiB or less.`);
+      return;
+    }
+    setReadingArchive(true);
+    try {
+      const archive = await readZipArchive(file);
+      verify.mutate({ buildId: fusionSourceId, archive });
+    } catch {
+      toast.error("Could not read the ZIP. Choose the file again.");
+    } finally {
+      setReadingArchive(false);
+    }
+  }
 
   const lastStep = build?.steps[build.steps.length - 1];
 
@@ -166,11 +227,11 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            disabled={!selected || running || start.isPending}
+            disabled={!selected || running || start.isPending || importing}
             onClick={() => start.mutate({ hackathonId: h.id, mode: "llm" })}
           >
             {running || start.isPending ? <IconLoader2 className="size-4 motion-safe:animate-spin" /> : <IconHammer className="size-4" />}
-            {running ? "Building…" : build ? "Build again" : "Build it"}
+            {running ? (fusion ? "Verifying…" : "Building…") : build ? "Build again" : "Build it"}
           </Button>
           {build?.previewUrl ? (
             <Button
@@ -184,14 +245,14 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
               <IconEye className="size-4" /> {showPreview ? "Hide preview" : "Preview"}
             </Button>
           ) : null}
-          {build?.downloadUrl ? (
+          {downloadUrl ? (
             <Button variant="outline" asChild>
-              <a href={build.downloadUrl} download>
-                <IconDownload className="size-4" /> Download zip
+              <a href={downloadUrl} download>
+                <IconDownload className="size-4" /> {build?.downloadUrl ? "Download zip" : "Download starter ZIP"}
               </a>
             </Button>
           ) : null}
-          {build?.status === "failed" ? (
+          {build?.status === "failed" && !fusion ? (
             <Button
               variant="ghost"
               onClick={() =>
@@ -207,6 +268,35 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
         </div>
       </div>
 
+      {originalZip ? (
+        <div className="mt-4 space-y-2 border-t border-border pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <a href="https://builder.io/app/projects" target="_blank" rel="noopener noreferrer">
+                <IconExternalLink className="size-4" /> Open in Fusion
+              </a>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-busy={importing}
+              disabled={running || start.isPending || importing}
+              onClick={() => archiveInput.current?.click()}
+            >
+              {importing ? <IconLoader2 className="size-4 motion-safe:animate-spin" /> : <IconUpload className="size-4" />}
+              {importing ? "Importing ZIP…" : "Import & verify"}
+            </Button>
+            <input ref={archiveInput} type="file" aria-label="Fusion ZIP" accept=".zip,application/zip" hidden onChange={importArchive} />
+          </div>
+          <details className="text-xs text-muted-foreground">
+            <summary className="w-fit cursor-pointer hover:text-foreground">How to edit this starter in Fusion</summary>
+            <p className="mt-1.5 max-w-prose leading-relaxed">
+              <a className="underline underline-offset-2" href={originalZip} download>Download the original starter ZIP</a>, unzip it, and add the files to a GitHub repository connected to Fusion. Edit the project in Fusion, then use <span className="font-medium">Download Code</span> and import that ZIP here to rerun the checks.
+            </p>
+          </details>
+        </div>
+      ) : null}
+
       {build ? (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -219,7 +309,7 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
               ) : (
                 <>
                   {build.status === "passed" ? "Passed" : "Failed"} in {secs(build.meta.durationMs)}
-                  {build.meta.model ? <> · {build.meta.model.split("/").pop()}</> : build.mode === "template" ? " · template" : null}
+                  {fusion ? " · Fusion verification" : build.meta.model ? <> · {build.meta.model.split("/").pop()}</> : build.mode === "template" ? " · template" : null}
                   {build.meta.cost ? <> · ${build.meta.cost.toFixed(4)}</> : null}
                 </>
               )}

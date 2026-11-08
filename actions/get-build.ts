@@ -10,7 +10,7 @@ import { buildOut } from "../shared/build.js";
 
 export default defineAction({
   description:
-    "Read a Build it run: status (running | passed | failed), the current stage, every step with timings and error output, repair rounds, model/provider and cost, the generated file list, the zip downloadUrl, and previewUrl (the running app built from vite dist/, same-origin). Pass hackathonId for the latest build of that hackathon, or buildId for one run. Pass file (a path from files) to also read that file's content.",
+    "Read a Build it run or Fusion verification: status, stage, check logs, source files, ZIP download, and preview when available. Fusion runs have mode=fusion and meta.sourceBuildId. Pass hackathonId for the latest run or buildId for one run. Pass file to include one source file's content.",
   schema: z.object({
     hackathonId: z.string().optional().describe("Hackathon id: returns its latest build"),
     buildId: z.string().optional().describe("A specific build id"),

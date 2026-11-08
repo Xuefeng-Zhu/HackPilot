@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   if (!session?.email) throw new HTTPError({ status: 401, message: "Sign in to preview builds." });
   const { orgId } = await getOrgContext(event);
   const [row] = await getDb().select().from(schema.builds).where(eq(schema.builds.id, id)).limit(1);
-  if (!row || row.status !== "passed") throw new HTTPError({ status: 404, message: "Build not found." });
+  if (!row || row.status !== "passed" || row.mode === "fusion") throw new HTTPError({ status: 404, message: "Build not found." });
   try {
     await runWithRequestContext({ userEmail: session.email, ...(orgId ? { orgId } : {}) }, () =>
       requireHackathon(row.hackathonId),

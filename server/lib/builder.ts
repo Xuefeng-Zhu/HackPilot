@@ -33,6 +33,7 @@ import {
   templateFiles,
 } from "./build-template.js";
 import { parseFileBlocks } from "./file-blocks.js";
+import { createFusionRunner } from "./fusion-runner.js";
 import { chatWithFallback, type ChatMessage, providerChain } from "./llm.js";
 import { nowIso } from "./workspace.js";
 
@@ -44,6 +45,22 @@ const MAX_FILES = 40;
 const VITE_CONFIG = `import { defineConfig } from "vite";\nimport react from "@vitejs/plugin-react";\n\nexport default defineConfig({ plugins: [react()] });\n`;
 const MAX_FILE_BYTES = 120_000;
 const running = new Map<string, Promise<void>>();
+const buildSlots = new Map<string, Promise<void>>();
+
+/** Serialize the overlap check and launch for each workspace on this process. */
+export async function withBuildSlot<T>(hackathonId: string, launch: () => Promise<T>): Promise<T> {
+  const previous = buildSlots.get(hackathonId);
+  let release!: () => void;
+  const slot = new Promise<void>((resolve) => { release = resolve; });
+  buildSlots.set(hackathonId, slot);
+  await previous;
+  try {
+    return await launch();
+  } finally {
+    release();
+    if (buildSlots.get(hackathonId) === slot) buildSlots.delete(hackathonId);
+  }
+}
 
 export function isBuildRunning(buildId: string) {
   return running.has(buildId);
@@ -321,11 +338,27 @@ function ideaPrompt(input: StarterInput & { rubric: string; requirements: string
 // ---------------------------------------------------------------- pipeline
 
 type CheckStage = "typechecking" | "building" | "testing";
-const CHECKS: { stage: CheckStage; label: string; cmd: string; args: string[]; timeoutMs: number }[] = [
+const CHECKS: { stage: CheckStage; label: string; cmd: "npx"; args: string[]; timeoutMs: number }[] = [
   { stage: "typechecking", label: "Typecheck (tsc --noEmit)", cmd: "npx", args: ["--no-install", "tsc", "--noEmit", "-p", "."], timeoutMs: 120_000 },
   { stage: "building", label: "Production build (vite build)", cmd: "npx", args: ["--no-install", "vite", "build", "--base", "./", "--logLevel", "warn"], timeoutMs: 120_000 },
   { stage: "testing", label: "Smoke test (tsx smoke.test.ts)", cmd: "npx", args: ["--no-install", "tsx", "smoke.test.ts"], timeoutMs: 60_000 },
 ];
+
+async function runChecks(
+  p: Progress,
+  runCheck: (check: (typeof CHECKS)[number]) => Promise<Pick<RunResult, "ok" | "code" | "output" | "timedOut">>,
+  round = 0,
+) {
+  for (const check of CHECKS) {
+    const t0 = await p.begin(check.stage, round ? `${check.label} · after repair ${round}` : check.label);
+    const result = await runCheck(check);
+    const passed = result.ok && (check.stage !== "testing" || /SMOKE OK/.test(result.output));
+    const output = result.output.trim();
+    await p.end(t0, passed ? "ok" : "fail", passed ? tail(output, 300) || undefined : tail(output, 2500) || (result.timedOut ? "timed out" : `exit ${result.code}`));
+    if (!passed) return { label: check.label, output: output || (result.timedOut ? "timed out" : `exit code ${result.code}`) };
+  }
+  return null;
+}
 
 async function install(dir: string, p: Progress, label = "Install dependencies (npm install)"): Promise<boolean> {
   const t0 = await p.begin("installing", label);
@@ -522,17 +555,7 @@ async function pipeline(buildId: string) {
   for (let round = 0; ; round++) {
     const fixes = await autofix(dir);
     if (fixes.length) await p.info("repairing", "Auto-fixed common slips", fixes.join(" · "));
-    let failing: { label: string; output: string } | null = null;
-    for (const c of CHECKS) {
-      const t0 = await p.begin(c.stage, round ? `${c.label} · after repair ${round}` : c.label);
-      const r = await run(c.cmd, c.args, dir, c.timeoutMs);
-      const passed = r.ok && (c.stage !== "testing" || /SMOKE OK/.test(r.output));
-      await p.end(t0, passed ? "ok" : "fail", passed ? tail(r.output.trim(), 300) || undefined : tail(r.output.trim(), 2500) || (r.timedOut ? "timed out" : `exit ${r.code}`));
-      if (!passed) {
-        failing = { label: c.label, output: r.output.trim() || (r.timedOut ? "timed out" : `exit code ${r.code}`) };
-        break;
-      }
-    }
+    const failing = await runChecks(p, (check) => run(check.cmd, check.args, dir, check.timeoutMs), round);
     if (!failing) break;
     if (round >= MAX_REPAIR_ROUNDS || mode === "template" || !hasLlm) {
       await p.finish("failed", {
@@ -563,7 +586,7 @@ async function pipeline(buildId: string) {
   const t0 = await p.begin("packaging", "Package the source as a zip and update the plan");
   const zipPath = path.join(root, "starter.zip");
   await fs.rm(zipPath, { force: true });
-  const z = await run("zip", ["-qr", zipPath, ".", "-x", "node_modules/*", "dist/*", "package-lock.json"], dir, 60_000);
+  const z = await run("zip", ["-qr", zipPath, ".", "-x", "node_modules/*", "dist/*"], dir, 60_000);
   if (z.ok) p.meta.zipBytes = (await fs.stat(zipPath)).size;
   const marked = await markProgress(hackathon.id, buildId);
   p.meta.tasksCompleted = marked.tasks;
@@ -582,9 +605,61 @@ async function pipeline(buildId: string) {
   await p.finish("passed", { files: await listFiles(dir), error: null });
 }
 
+type FusionSource = { sourceBuildId: string; files: Map<string, Buffer> };
+
+async function verifyFusion(buildId: string, source: FusionSource) {
+  const p = new Progress(buildId);
+  p.meta.sourceBuildId = source.sourceBuildId;
+  const root = path.join(BUILD_ROOT, buildId);
+  const dir = path.join(root, "app");
+  const sandbox = path.join(root, "verification");
+  const importing = await p.begin("importing", "Stage the edited Fusion starter");
+  await fs.mkdir(dir, { recursive: true });
+  for (const [relative, content] of source.files) {
+    const file = path.join(dir, relative);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, content);
+  }
+  const files = await listFiles(dir);
+  await getDb().update(schema.builds).set({ dir: root, files }).where(eq(schema.builds.id, buildId));
+  await p.end(importing, "ok");
+
+  // Only the staged source is returned. The verifier's workspace is disposable.
+  try {
+    await fs.cp(dir, sandbox, { recursive: true });
+    const runner = createFusionRunner(sandbox);
+    const installStart = await p.begin("installing", "Install original dependencies in isolation");
+    const install = await runner.run("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], 240_000);
+    await p.end(installStart, install.ok ? "ok" : "fail", tail(install.output.trim(), install.ok ? 300 : 2500) || undefined);
+    if (!install.ok) {
+      await p.finish("failed", { error: "Could not prepare the isolated verifier. See the build log." });
+      return;
+    }
+    const failed = await runChecks(p, (check) => runner.run(check.cmd, check.args, check.timeoutMs));
+    if (failed) {
+      await p.finish("failed", { error: `${failed.label} failed. Fix the source in Fusion and upload the ZIP again.` });
+      return;
+    }
+  } finally {
+    await fs.rm(sandbox, { force: true, recursive: true }).catch(() => undefined);
+  }
+
+  const packaging = await p.begin("packaging", "Package the verified Fusion source");
+  const zipPath = path.join(root, "starter.zip");
+  const zip = await run("zip", ["-qr", zipPath, "."], dir, 60_000);
+  if (!zip.ok) {
+    await p.end(packaging, "fail", tail(zip.output, 300));
+    await p.finish("failed", { error: "Checks passed, but the verified source ZIP could not be created." });
+    return;
+  }
+  p.meta.zipBytes = (await fs.stat(zipPath)).size;
+  await p.end(packaging, "ok");
+  await p.finish("passed", { error: null });
+}
+
 /** Start a build in the background; resolves immediately. */
-export function startBuild(buildId: string) {
-  const job = pipeline(buildId)
+export function startBuild(buildId: string, source?: FusionSource) {
+  const job = (source ? verifyFusion(buildId, source) : pipeline(buildId))
     .catch(async (error) => {
       console.error(`[build ${buildId}] crashed`, error);
       await getDb()
