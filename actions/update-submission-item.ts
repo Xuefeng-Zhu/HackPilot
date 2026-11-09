@@ -11,12 +11,22 @@ import {
   requireHackathon,
   serializeItem,
 } from "../server/lib/workspace.js";
+import { isHostedClipsUrl } from "../shared/clips.js";
 import { SUBMISSION_KINDS, SUBMISSION_STATUSES } from "../shared/hackpilot.js";
 import { submissionItemOut } from "../shared/outputs.js";
 
+function requireVerifiedClipsProof(kind: string, link: string | null | undefined) {
+  if (kind === "demo_video" && link && isHostedClipsUrl(link)) {
+    fail("Use attach-clips-proof to verify and save this Clips recording.", {
+      errorCode: "clips_verification_required",
+      statusCode: 400,
+    });
+  }
+}
+
 export default defineAction({
   description:
-    'Create, update, or delete a submission checklist item. Omit id and pass hackathonId + label to add one. With id: set status ("todo", "in_progress", "done"), link (e.g. the demo video or repo URL), label, kind, detail, or delete=true.',
+    'Create, update, or delete a submission checklist item. Omit id and pass hackathonId + label to add one. With id: set status ("todo", "in_progress", "done"), link (e.g. the demo video or repo URL), label, kind, detail, or delete=true. Use attach-clips-proof for hosted Clips recordings.',
   schema: z.object({
     id: z.string().optional().describe("Checklist item id; omit to create"),
     hackathonId: z
@@ -69,6 +79,7 @@ export default defineAction({
         });
       }
       const row = await requireHackathon(args.hackathonId, "editor");
+      requireVerifiedClipsProof(args.kind ?? "other", args.link);
       const posRows = await db
         .select({
           max: sql<number>`coalesce(max(${submissionItems.position}), -1)::int`,
@@ -104,6 +115,8 @@ export default defineAction({
       .select({
         id: submissionItems.id,
         hackathonId: submissionItems.hackathonId,
+        kind: submissionItems.kind,
+        link: submissionItems.link,
       })
       .from(submissionItems)
       .where(eq(submissionItems.id, args.id))
@@ -131,6 +144,11 @@ export default defineAction({
         message: "Item removed.",
       };
     }
+    const nextKind = args.kind ?? item.kind;
+    const nextLink = args.link === undefined ? item.link : args.link;
+    const changesProof = nextKind !== item.kind || nextLink !== item.link;
+    if (changesProof) requireVerifiedClipsProof(nextKind, nextLink);
+
     const patch: Partial<typeof submissionItems.$inferInsert> = {
       updatedAt: nowIso(),
     };
@@ -144,18 +162,29 @@ export default defineAction({
         errorCode: "empty_patch",
       });
     }
-    const updated = one(
-      await db
-        .update(submissionItems)
-        .set(patch)
-        .where(
-          and(
-            eq(submissionItems.id, item.id),
-            eq(submissionItems.hackathonId, row.id),
-          ),
-        )
-        .returning(),
-    );
+    const [updated] = await db
+      .update(submissionItems)
+      .set(patch)
+      .where(
+        and(
+          eq(submissionItems.id, item.id),
+          eq(submissionItems.hackathonId, row.id),
+          // A concurrent change must not bypass the proof check above.
+          args.kind !== undefined || args.link !== undefined
+            ? and(
+                eq(submissionItems.kind, item.kind),
+                sql`${submissionItems.link} is not distinct from ${item.link}`,
+              )
+            : undefined,
+        ),
+      )
+      .returning();
+    if (!updated) {
+      fail("The checklist item changed. Refresh it and try again.", {
+        errorCode: "submission_item_changed",
+        statusCode: 409,
+      });
+    }
     return {
       id: updated.id,
       hackathonId: row.id,

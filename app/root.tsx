@@ -33,6 +33,7 @@ import {
   threadIdFromPath,
 } from "@/lib/chat-paths";
 import { TAB_ID } from "@/lib/tab-id";
+import "@/lib/register-companion-renderer";
 
 import { i18nCatalog } from "./i18n";
 

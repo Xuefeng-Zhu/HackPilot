@@ -36,6 +36,7 @@ export type BuildFile = z.infer<typeof buildFileSchema>;
 export const buildMetaSchema = z.object({
   /** Passed build whose toolchain and smoke test were used for verification. */
   sourceBuildId: z.string().optional(),
+  source: z.enum(["design", "idea"]).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
   /** Every model call, in order: "nvidia/<model>: ok in 31s". */

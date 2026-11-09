@@ -1,14 +1,17 @@
 import { defineAction } from "@agent-native/core/action";
 import { readAppState } from "@agent-native/core/application-state";
+import { getRequestContext } from "@agent-native/core/server";
 import { accessFilter } from "@agent-native/core/sharing";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
+import { buildAccessFilter, getBuildAuthUserId } from "../server/lib/build-access.js";
+import { readDesignPrototype } from "../server/lib/design-prototype.js";
 
 export default defineAction({
   description:
-    "Read the current navigation state plus, on a hackathon page, a compact summary of the visible workspace (name, deadline, timezone). Basic navigation is already in <current-screen>; use get-hackathon for full details.",
+    "Read the current navigation state, a compact hackathon summary, the current user's saved prototype on Ideas and Plan, and the latest accessible build on Plan. Use get-hackathon for full workspace details.",
   schema: z.object({}),
   http: false,
   readOnly: true,
@@ -17,13 +20,10 @@ export default defineAction({
 
     const screen: Record<string, unknown> = {};
     if (navigation) screen.navigation = navigation;
-    const hackathonId =
-      navigation &&
-      typeof navigation === "object" &&
-      "hackathonId" in navigation
-        ? String((navigation as { hackathonId?: unknown }).hackathonId ?? "")
-        : "";
-    if (hackathonId) {
+    const nav = navigation && typeof navigation === "object"
+      ? (navigation as { hackathonId?: unknown; tab?: unknown })
+      : null;
+    if (typeof nav?.hackathonId === "string" && nav.hackathonId) {
       const { hackathons, hackathonShares } = schema;
       const [row] = await getDb()
         .select({
@@ -35,7 +35,7 @@ export default defineAction({
         .from(hackathons)
         .where(
           and(
-            eq(hackathons.id, hackathonId),
+            eq(hackathons.id, nav.hackathonId),
             accessFilter(hackathons, hackathonShares),
           ),
         )
@@ -45,12 +45,26 @@ export default defineAction({
           ...row,
           next: "Call get-hackathon for ideas, tasks, and checklist.",
         };
-        if ((navigation as { tab?: unknown }).tab === "plan") {
+        const request = getRequestContext();
+        if (
+          (nav.tab === "ideas" || nav.tab === "plan") &&
+          request?.userEmail &&
+          !request.agentRunAnonymous
+        ) {
+          screen.designPrototype = await readDesignPrototype(row.id, request.userEmail);
+        }
+        if (nav.tab === "plan") {
           const { builds } = schema;
           const [build] = await getDb()
-            .select({ id: builds.id, status: builds.status, stage: builds.stage, mode: builds.mode, meta: builds.meta })
+            .select({
+              id: builds.id,
+              status: builds.status,
+              stage: builds.stage,
+              mode: builds.mode,
+              meta: builds.meta,
+            })
             .from(builds)
-            .where(eq(builds.hackathonId, row.id))
+            .where(and(eq(builds.hackathonId, row.id), buildAccessFilter(getBuildAuthUserId())))
             .orderBy(desc(builds.createdAt))
             .limit(1);
           if (build) {

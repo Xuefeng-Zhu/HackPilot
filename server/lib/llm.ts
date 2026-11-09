@@ -1,12 +1,12 @@
 /**
  * Server-side LLM calls for HackPilot actions.
  *
- * Provider chain (first configured provider wins, the next one takes over on
- * an error, 404/410 model-not-available, 429, or timeout):
+ * Fast structured calls use the first configured provider and fall back on an
+ * error, 404/410 model-not-available, 429, or timeout. Build calls use
+ * OpenRouter only, with OPENROUTER_BUILD_MODEL as an optional override:
  *
- *   1. NVIDIA build (integrate.api.nvidia.com, OpenAI-compatible)
- *      key `NVIDIA_API_KEY`; model `NVIDIA_MODEL` for fast structured calls,
- *      `NVIDIA_BUILD_MODEL` for code generation.
+ *   1. NVIDIA (integrate.api.nvidia.com, OpenAI-compatible)
+ *      key `NVIDIA_API_KEY`; model `NVIDIA_MODEL` for fast structured calls.
  *   2. OpenRouter
  *      key `OPENROUTER_API_KEY`; model `OPENROUTER_MODEL` for structured calls,
  *      `OPENROUTER_BUILD_MODEL` for code generation.
@@ -34,7 +34,7 @@ const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 /** Benchmarked defaults (Nov 2026, see README "LLM providers"). */
 export const DEFAULT_NVIDIA_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
 export const DEFAULT_NVIDIA_BUILD_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
-export const DEFAULT_OPENROUTER_BUILD_MODEL = "openai/gpt-6-luna";
+export const DEFAULT_OPENROUTER_BUILD_MODEL = "deepseek/deepseek-v4.1-flash-1017";
 
 export type ProviderId = "nvidia" | "openrouter";
 export type Purpose = "fast" | "build";
@@ -75,7 +75,8 @@ export async function providerChain(purpose: Purpose): Promise<ProviderTarget[]>
   const disabled = new Set(
     (env("HACKPILOT_DISABLE_PROVIDERS") ?? "").split(",").map((s) => s.trim()),
   );
-  const nv = disabled.has("nvidia") ? null : await resolveKey(NVIDIA_KEY);
+  const useOpenRouterBuild = purpose === "build";
+  const nv = useOpenRouterBuild || disabled.has("nvidia") ? null : await resolveKey(NVIDIA_KEY);
   if (nv) {
     chain.push({ provider: "nvidia", model: modelFor("nvidia", purpose), apiKey: nv, baseURL: NVIDIA_BASE_URL });
   }
@@ -205,7 +206,7 @@ class ProviderError extends Error {}
 async function streamChat(
   t: ProviderTarget,
   messages: ChatMessage[],
-  opts: { maxTokens: number; timeoutMs: number; firstTokenMs: number; jsonObject: boolean },
+  opts: { purpose: Purpose; maxTokens: number; timeoutMs: number; firstTokenMs: number; jsonObject: boolean },
 ): Promise<Omit<ChatResult, "attempts">> {
   const started = Date.now();
   const ctrl = new AbortController();
@@ -228,12 +229,18 @@ async function streamChat(
       body: JSON.stringify({
         model: t.model,
         messages,
-        max_tokens: opts.maxTokens,
+        ...(opts.purpose === "fast" ? { max_tokens: opts.maxTokens } : {}),
         temperature: 0.2,
         stream: true,
         ...(t.provider === "openrouter" ? { usage: { include: true } } : { stream_options: { include_usage: true } }),
         ...(opts.jsonObject ? { response_format: { type: "json_object" } } : {}),
         ...(t.provider === "nvidia" ? nvidiaExtraBody() : {}),
+        // The tested build models support low-effort reasoning. DeepSeek
+        // keeps reasoning enabled, while leaving room to emit the app files.
+        ...(t.provider === "openrouter" && (t.model.toLowerCase().replace(/:.*$/, "") === "z-ai/glm-5.3" ||
+          (opts.purpose === "build" && t.model.toLowerCase().replace(/:.*$/, "") === "deepseek/deepseek-v4.1-flash-1017"))
+          ? { reasoning: { effort: "low" } }
+          : {}),
       }),
     });
     if (!res.ok || !res.body) {
@@ -308,12 +315,18 @@ export async function chatWithFallback(
   },
 ): Promise<ChatResult> {
   const chain = (await providerChain(opts.purpose)).filter((t) => !opts.skip?.includes(t.provider));
-  if (!chain.length) throw new Error("No LLM provider is configured (NVIDIA_API_KEY / OPENROUTER_API_KEY).");
+  if (!chain.length) {
+    if (opts.purpose === "build" && !opts.skip?.includes("openrouter")) {
+      throw new Error("Build it requires an enabled OpenRouter provider and OPENROUTER_API_KEY.");
+    }
+    throw new Error("No LLM provider is configured or available (NVIDIA_API_KEY / OPENROUTER_API_KEY).");
+  }
   const attempts: string[] = [];
   for (const target of chain) {
     opts.onAttempt?.({ provider: target.provider, model: target.model });
     try {
       const r = await streamChat(target, messages, {
+        purpose: opts.purpose,
         maxTokens: opts.maxTokens ?? 4000,
         timeoutMs: opts.timeoutMs ?? 120_000,
         firstTokenMs: opts.firstTokenMs ?? 60_000,

@@ -20,7 +20,7 @@ export function serializeBuild(row: BuildRow): BuildOut {
     notes: row.notes,
     error: row.error,
     downloadUrl: row.status === "passed" && row.meta?.zipBytes ? buildDownloadUrl(row.id) : null,
-    previewUrl: row.mode !== "fusion" && row.status === "passed" && hasPreview(row.dir) ? buildPreviewUrl(row.id) : null,
+    previewUrl: row.mode !== "fusion" && row.status === "passed" && hasPreview(row.dir, row.designPrototypeId !== null) ? buildPreviewUrl(row.id) : null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     finishedAt: row.finishedAt,

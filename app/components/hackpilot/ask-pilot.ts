@@ -5,12 +5,15 @@ import { sendToAgentChat } from "@agent-native/core/client/agent-chat";
  * context. The agent answers by calling the same actions the UI uses, so the
  * page updates as it works.
  */
-export function askPilot(message: string, workspace?: { id: string; name: string; tab?: string }) {
+export function askPilot(
+  message: string,
+  workspace?: { id: string; name: string; tab?: string; ideaId?: string },
+) {
   sendToAgentChat({
     message,
     ...(workspace
       ? {
-          context: `HackPilot workspace: "${workspace.name}" (hackathonId ${workspace.id})${workspace.tab ? `, viewing the ${workspace.tab} tab` : ""}. Use the HackPilot actions with this hackathonId.`,
+          context: `HackPilot workspace: "${workspace.name}" (hackathonId ${workspace.id})${workspace.tab ? `, viewing the ${workspace.tab} tab` : ""}. Use the HackPilot actions with this hackathonId.${workspace.ideaId ? ` The Design request targets idea ID ${workspace.ideaId}.` : ""}`,
         }
       : {}),
     submit: true,

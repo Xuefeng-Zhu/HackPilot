@@ -1,16 +1,17 @@
 /**
  * Binary download of a passed "Build it" run's source zip. A route rather than
  * an action because the payload is a file, not JSON. Access mirrors the
- * hackathon's sharing: the caller must be able to view the hackathon.
+ * hackathon's sharing: the caller must be able to view the hackathon and own any Design build.
  */
 import fs from "node:fs/promises";
 
 import { getOrgContext } from "@agent-native/core/org";
 import { getSession, runWithRequestContext } from "@agent-native/core/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { defineEventHandler, getRouterParam, HTTPError } from "h3";
 
 import { getDb, schema } from "../../../../db/index.js";
+import { buildAccessFilter } from "../../../../lib/build-access.js";
 import { zipPathFor } from "../../../../lib/builder.js";
 import { requireHackathon } from "../../../../lib/workspace.js";
 
@@ -19,7 +20,11 @@ export default defineEventHandler(async (event) => {
   const session = await getSession(event);
   if (!session?.email) throw new HTTPError({ status: 401, message: "Sign in to download builds." });
   const { orgId } = await getOrgContext(event);
-  const [row] = await getDb().select().from(schema.builds).where(eq(schema.builds.id, id)).limit(1);
+  const [row] = await getDb()
+    .select()
+    .from(schema.builds)
+    .where(and(eq(schema.builds.id, id), buildAccessFilter(session.authUserId)))
+    .limit(1);
   if (!row) throw new HTTPError({ status: 404, message: "Build not found." });
   try {
     await runWithRequestContext({ userEmail: session.email, ...(orgId ? { orgId } : {}) }, () =>

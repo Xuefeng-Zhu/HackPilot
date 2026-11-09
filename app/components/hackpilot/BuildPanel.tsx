@@ -20,10 +20,11 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { buildDownloadUrl, MAX_FUSION_ARCHIVE_BYTES, type BuildOut, type BuildStep } from "@shared/build";
 import type { WorkspaceOut } from "@shared/outputs";
 
@@ -130,9 +131,12 @@ function Pipeline({ build }: { build: BuildOut }) {
   );
 }
 
-export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
+export function BuildPanel({ ws, hasDesignPrototype }: { ws: WorkspaceOut; hasDesignPrototype: boolean }) {
   const h = ws.hackathon;
   const selected = ws.ideas.find((i) => i.selected) ?? null;
+  const designCheckboxId = useId();
+  const [ideasWithoutDesign, setIdeasWithoutDesign] = useState<ReadonlySet<string>>(() => new Set());
+  const useDesign = !selected || !ideasWithoutDesign.has(selected.id);
   const queryClient = useQueryClient();
   const [showLog, setShowLog] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
@@ -148,17 +152,20 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
   );
   const build = data?.build ?? null;
   const running = build?.status === "running";
+  const designBuild = build?.meta.source === "design";
   const fusion = build?.mode === "fusion";
   const passedBuildId = build?.status === "passed" && build.downloadUrl ? build.id : undefined;
-  const fusionSourceId = passedBuildId ?? (fusion ? build.meta.sourceBuildId : undefined);
+  const fusionSourceId = designBuild ? undefined : passedBuildId ?? (fusion ? build.meta.sourceBuildId : undefined);
   const originalZip = fusionSourceId ? buildDownloadUrl(fusionSourceId) : null;
   const downloadUrl = build?.downloadUrl ?? originalZip;
 
-  // When a run finishes, the plan and checklist changed underneath us.
+  // Regular builds can update the plan and checklist.
   const lastStatus = useRef(build?.status);
   useEffect(() => {
     if (lastStatus.current === "running" && build && build.status !== "running") {
-      void queryClient.invalidateQueries({ queryKey: workspaceKey(h.id) });
+      if (build.meta.source !== "design" && build.mode !== "fusion") {
+        void queryClient.invalidateQueries({ queryKey: workspaceKey(h.id) });
+      }
       if (build.status === "passed") {
         toast.success(build.mode === "fusion" ? "The Fusion ZIP passed verification." : `“${build.ideaTitle}” builds and passes its smoke test.`);
       } else {
@@ -210,6 +217,9 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
   }
 
   const lastStep = build?.steps[build.steps.length - 1];
+  const retryInstructions = designBuild
+    ? 'If the same idea still has its linked Design prototype and the issue can be retried, retry with mode "llm" and design "auto" using that idea ID. If Design cannot be used, explain how to reconnect or choose a regular build. Keep the retry Design-based.'
+    : 'Start a new build-project run for the same idea with design "off" (use mode "template" if the model keeps failing).';
 
   return (
     <section aria-label="Build it" className="rounded-xl border border-border bg-card p-4">
@@ -224,11 +234,46 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
               ? <>Turn <span className="font-medium text-foreground">{selected.title}</span> and this plan into a running Vite + React + TypeScript starter: generated, installed, typechecked, built, and smoke-tested, with up to 3 repair rounds.</>
               : "Pick an idea on the Ideas tab first, then build a running starter app from it."}
           </p>
+          {selected && hasDesignPrototype ? (
+            <div className="mt-3 space-y-1">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={designCheckboxId}
+                  checked={useDesign}
+                  disabled={running || start.isPending || importing}
+                  aria-describedby={`${designCheckboxId}-privacy`}
+                  onCheckedChange={(checked) => {
+                    setIdeasWithoutDesign((previous) => {
+                      const next = new Set(previous);
+                      if (checked === true) next.delete(selected.id);
+                      else next.add(selected.id);
+                      return next;
+                    });
+                  }}
+                />
+                <label htmlFor={designCheckboxId} className="text-sm font-medium">
+                  Use Design prototype
+                </label>
+              </div>
+              <p id={`${designCheckboxId}-privacy`} className="pl-6 text-xs text-muted-foreground">
+                Only you can open a build that uses Design.
+              </p>
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             disabled={!selected || running || start.isPending || importing}
-            onClick={() => start.mutate({ hackathonId: h.id, mode: "llm" })}
+            onClick={() => {
+              if (selected) {
+                start.mutate({
+                  hackathonId: h.id,
+                  ideaId: selected.id,
+                  mode: "llm",
+                  design: useDesign ? "auto" : "off",
+                });
+              }
+            }}
           >
             {running || start.isPending ? <IconLoader2 className="size-4 motion-safe:animate-spin" /> : <IconHammer className="size-4" />}
             {running ? (fusion ? "Verifying…" : "Building…") : build ? "Build again" : "Build it"}
@@ -257,7 +302,7 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
               variant="ghost"
               onClick={() =>
                 askPilot(
-                  `The last Build it run for this hackathon failed (build ${build.id}). Read it with get-build, explain the failure in two sentences, then start a new build-project run (use mode "template" if the model keeps failing) and report the result.`,
+                  `The last Build it run for this hackathon failed (build ${build.id}). Read it with get-build and explain the failure in two sentences. ${retryInstructions} Report the result.`,
                   { id: h.id, name: h.name, tab: "plan" },
                 )
               }
@@ -302,6 +347,7 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <Pipeline build={build} />
             <span className="ml-auto text-xs text-muted-foreground">
+              {designBuild ? "Private Design build · " : null}
               {running ? (
                 <>
                   {STAGE_LABEL[build.stage] ?? build.stage} · <Elapsed baseMs={build.meta.durationMs ?? 0} running />
@@ -359,16 +405,21 @@ export function BuildPanel({ ws }: { ws: WorkspaceOut }) {
                 key={`${build.id}-${previewNonce}`}
                 src={build.previewUrl}
                 title={`Preview of ${build.ideaTitle}`}
-                sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+                sandbox={designBuild ? "allow-scripts" : "allow-scripts allow-forms allow-same-origin allow-popups"}
                 className="block h-[34rem] w-full bg-white"
               />
             </div>
           ) : null}
           {build.status === "failed" ? (
-            <p className="flex items-start gap-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
               <IconAlertTriangle className="mt-0.5 size-4 shrink-0" />
-              {build.error ?? "The build failed."}
-            </p>
+              <div>
+                <p>{build.error ?? "The build failed."}</p>
+                {designBuild && hasDesignPrototype && build.ideaId === selected?.id ? (
+                  <p className="mt-1 text-xs">Retry with Build again, or clear Use Design prototype to start a regular build.</p>
+                ) : null}
+              </div>
+            </div>
           ) : null}
 
           <div className="flex flex-wrap gap-4 text-xs">

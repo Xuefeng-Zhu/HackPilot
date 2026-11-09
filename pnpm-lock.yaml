@@ -125,6 +125,12 @@ importers:
       node-pty:
         specifier: ^1.1.0
         version: 1.1.0
+      parse5:
+        specifier: 8.0.1
+        version: 8.0.1
+      postcss:
+        specifier: 8.5.32
+        version: 8.5.32
       postgres:
         specifier: ^3.4.9
         version: 3.4.9

@@ -3,7 +3,7 @@ import {
   ownableColumns,
 } from "@agent-native/core/db/schema";
 import { sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
+import { boolean, check, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
 
 import type { BuildFile, BuildMeta, BuildStep } from "../../shared/build.js";
 import type { Milestone } from "../../shared/milestones.js";
@@ -120,6 +120,9 @@ export const builds = pgTable("hackathon_builds", {
   hackathonId: text("hackathon_id").notNull(),
   ideaId: text("idea_id"),
   ideaTitle: text("idea_title").notNull(),
+  designPrototypeId: text("design_prototype_id"),
+  /** Stable authenticated account ID; private builds never inherit workspace sharing. */
+  designOwnerAuthId: text("design_owner_auth_id"),
   /** "running" | "passed" | "failed" */
   status: text("status").notNull().default("running"),
   /** Current stage key, e.g. "generating", "installing", "repairing". */
@@ -142,4 +145,9 @@ export const builds = pgTable("hackathon_builds", {
     .notNull()
     .default(sql`now()`),
   finishedAt: text("finished_at"),
-});
+}, (table) => [
+  check("hackathon_builds_design_scope_check", sql`
+    (${table.designPrototypeId} IS NULL AND ${table.designOwnerAuthId} IS NULL)
+    OR (${table.designPrototypeId} IS NOT NULL AND ${table.designOwnerAuthId} IS NOT NULL AND ${table.orgId} IS NULL)
+  `),
+]);

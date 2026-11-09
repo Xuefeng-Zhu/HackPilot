@@ -34,14 +34,13 @@ Full docs: [agent-native.com/docs/template-chat](https://agent-native.com/docs/t
 
 ## LLM providers
 
-In-action AI (import extraction, idea generation, "Build it") uses NVIDIA build (`integrate.api.nvidia.com`, OpenAI-compatible) first and falls back to OpenRouter on any error, 404/410 (model not enabled / retired), 429, or timeout.
+Fast in-action AI uses NVIDIA (`integrate.api.nvidia.com`, OpenAI-compatible) first and falls back to OpenRouter on errors or timeouts. Build it uses OpenRouter with `deepseek/deepseek-v4.1-flash-1017` by default; configure `OPENROUTER_API_KEY` and optionally set `OPENROUTER_BUILD_MODEL` to select another model. DeepSeek V4.1 Flash 1017 and GLM 5.3 use low reasoning effort. Build generation and repair omit the output-token limit; provider limits and request timeouts still apply. If the build model is unavailable or generation fails, Build it reports the failure and uses its deterministic template.
 
 | Purpose | Default | Env |
 | --- | --- | --- |
 | Fast structured calls | `nvidia/nemotron-3.5-super-vl-120b-a12b` (reasoning off) | `NVIDIA_MODEL` |
-| Code generation (Build it) | `nvidia/nemotron-3.5-super-vl-120b-a12b` | `NVIDIA_BUILD_MODEL` |
-| Fallback structured | `OPENROUTER_MODEL` | |
-| Fallback / escalation for code repair | `openai/gpt-6-luna` | `OPENROUTER_BUILD_MODEL` |
+| Fast structured fallback | Framework OpenRouter default | `OPENROUTER_MODEL` |
+| Build it generation / repair | `deepseek/deepseek-v4.1-flash-1017` on OpenRouter | `OPENROUTER_BUILD_MODEL` (optional override) |
 
 Benchmarks (Nov 2026, Frank's key): nemotron-3.5-super-vl structured JSON ~1 s, full 9-file app ~31–93 s; nemotron-3-ultra-550b structured ~4–6 s, full app 184 s with more type errors; kimi-k2.6 and nemotron-3-super-120b return 404 for this account; deepseek-v4.1-flash and glm-5.3-flash timed out; gpt-oss-120b and llama-3.3-70b are retired (410); gpt-oss-20b ~23–35 s for a tiny reply.
 
