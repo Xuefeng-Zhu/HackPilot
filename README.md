@@ -1,47 +1,53 @@
-# Chat
+# HackPilot
 
-The minimal agent-native starter app — a clean, ChatGPT-style shell with chat at
-the center, durable threads, standard app navigation, auth, live sync, and
-actions. Start here when you want a real browser app to build on without
-committing to a domain template.
+HackPilot turns a hackathon page into a workspace for picking an idea, planning the sprint, building a starter app, and preparing the submission. Work in the boards or ask Pilot to make a change in chat. Both use the same Agent-Native actions and workspace data.
 
-**Live app: [chat.agent-native.com](https://chat.agent-native.com?utm_source=github&utm_medium=referral&utm_content=chat-readme)**
+## Workflow
 
-Chat is the basic agent-native app starting point. It gives you the app-agent
-loop wired end to end and one example action, so you can add your own UI, data,
-and actions on top.
+1. **Overview.** Import a public hackathon URL to extract the deadline, prizes, judging criteria, and submission requirements. Review and edit the imported details before planning.
+2. **Ideas.** Add your own ideas or brainstorm with Pilot. Compare scores and rationales against the event's weighted rubric, then pick an idea to build.
+3. **Plan.** Generate a sprint with four milestones: Idea locked, Core works, Demo-ready, and Submitted. Move tasks on the board or ask Pilot to reschedule work around the remaining time.
+4. **Build it.** In Plan, generate a Vite, React, and TypeScript starter from the selected idea. HackPilot installs dependencies, typechecks, builds, and runs a smoke test. Model builds can try up to three repair rounds. Open the preview from the build results and download the source ZIP when packaging succeeds.
+5. **Checklist.** Track requirements and proof links, then run **Readiness check with Pilot** to see missing items and overdue tasks. Use **Record demo in Clips** to record a walkthrough, then verify and attach its public share link to the demo video item. Submit through the organizer's form.
 
-## Features
+### Design and Fusion
 
-- ChatGPT-style shell with a threads list and durable chat history.
-- Auth, live sync, and application state wired out of the box.
-- The action surface the agent and UI share, plus one example action to copy.
-- A minimal, brandable base for any domain app.
+After picking an idea, connect Design from **Ideas** and select **Draft UI in Design**. When Pilot links the draft, **Open prototype** appears in Ideas and Plan. With **Use Design prototype** selected, **Build it** uses the linked draft as a visual reference. The resulting preview and ZIP stay private to the person who started the build.
 
-## Develop locally
+To edit a passed idea-based starter in Fusion, download its source ZIP, unzip it into a GitHub repo connected to Fusion, and open the project in Fusion. After editing, choose **Download Code** in Fusion, then **Import & verify** in HackPilot's Plan tab. Keep the ZIP within 2 MiB and retain the original package manifest, TypeScript and Vite configuration, and smoke test. If the export includes a dependency lockfile, keep the original. HackPilot uses that lockfile to rerun the checks on the edited source. Open the edited preview in Fusion and download the verified ZIP in HackPilot.
 
-Scaffold your own copy and run it:
+From **Checklist**, you can also start private submission drafts in Content and Slides. Ask Pilot for a private Plan snapshot if you want a separate planning artifact. These handoffs use your personal app connections.
 
-```bash
-npx --yes @agent-native/core@latest create my-app --standalone --template chat
-cd my-app
-corepack enable
-pnpm install
+## Run locally
+
+Use Node.js 22.22.0 or newer and pnpm 10.29.1. From a fresh checkout:
+
+```sh
+cp .env.example .env
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Full docs: [agent-native.com/docs/template-chat](https://agent-native.com/docs/template-chat?utm_source=github&utm_medium=referral&utm_content=chat-readme).
+Open the address printed by the dev server, then sign in to reach **Hackathons**. The local database uses PGlite by default. Starter builds also need `npm` and `zip` on the server's PATH. For Fusion verification, see the [verifier setup](DEVELOPING.md#fusion-verification).
 
-## LLM providers
+### LLM providers
 
-Fast in-action AI uses NVIDIA (`integrate.api.nvidia.com`, OpenAI-compatible) first and falls back to OpenRouter on errors or timeouts. Build it uses OpenRouter with `deepseek/deepseek-v4.1-flash-1017` by default; configure `OPENROUTER_API_KEY` and optionally set `OPENROUTER_BUILD_MODEL` to select another model. DeepSeek V4.1 Flash 1017 and GLM 5.3 use low reasoning effort. Build generation and repair omit the output-token limit; provider limits and request timeouts still apply. If the build model is unavailable or generation fails, Build it reports the failure and uses its deterministic template.
+| Feature                        | Configuration                                                                                                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fast structured actions        | `NVIDIA_API_KEY` enables NVIDIA first. The default model is `nvidia/nemotron-3.5-super-vl-120b-a12b` and `NVIDIA_MODEL` overrides it. `OPENROUTER_API_KEY` enables the OpenRouter fallback. |
+| Build it generation and repair | Set `OPENROUTER_API_KEY`. The default is `deepseek/deepseek-v4.1-flash-1017` with low reasoning effort. Override it with `OPENROUTER_BUILD_MODEL`.                                          |
+| Pilot chat                     | Choose a provider in **Settings → AI engine**. A deployment with `OPENROUTER_API_KEY` configures OpenRouter for chat. `OPENROUTER_MODEL` can set its model.                                 |
 
-| Purpose | Default | Env |
-| --- | --- | --- |
-| Fast structured calls | `nvidia/nemotron-3.5-super-vl-120b-a12b` (reasoning off) | `NVIDIA_MODEL` |
-| Fast structured fallback | Framework OpenRouter default | `OPENROUTER_MODEL` |
-| Build it generation / repair | `deepseek/deepseek-v4.1-flash-1017` on OpenRouter | `OPENROUTER_BUILD_MODEL` (optional override) |
+A regular build falls back to a deterministic starter when model generation is unavailable or fails. Design builds require the build model and access to the linked prototype. See [`.env.example`](.env.example) for configuration options.
 
-Benchmarks (Nov 2026, Frank's key): nemotron-3.5-super-vl structured JSON ~1 s, full 9-file app ~31–93 s; nemotron-3-ultra-550b structured ~4–6 s, full app 184 s with more type errors; kimi-k2.6 and nemotron-3-super-120b return 404 for this account; deepseek-v4.1-flash and glm-5.3-flash timed out; gpt-oss-120b and llama-3.3-70b are retired (410); gpt-oss-20b ~23–35 s for a tiny reply.
+## Demo walkthrough
 
-Agent chat: the framework can run chat on NVIDIA through its OpenAI-compatible engine (`ai-sdk:openai` with a custom base URL; NVIDIA tool calling verified), but it refuses to send a deploy-env `OPENAI_API_KEY` to a custom endpoint. To switch chat to NVIDIA, save the NVIDIA key with base URL `https://integrate.api.nvidia.com/v1` as an OpenAI-compatible key in Settings → AI engine and pick `nvidia/nemotron-3.5-super-vl-120b-a12b`. Until then chat stays on OpenRouter (there is no automatic chat fallback between engines).
+Open **Builder.io Agent-Native Hackathon demo** from the Hackathons list. It loads the curated rubric, sample ideas, and checklist. Before recording, configure Pilot chat and complete a **Build it** run. Use a workspace with a future deadline if you need to generate a fresh sprint.
+
+1. Open **Overview** and point to the deadline and weighted rubric.
+2. Open **Ideas** and click **Why these scores?** on the HackPilot idea.
+3. In **Plan**, ask Pilot to move a visible task to **Demo-ready**. Show the card move in the same workspace.
+4. Open a completed **Build it** run, show the check results, and interact with the starter in **Preview**.
+5. Run the readiness check in **Checklist** and point to one requirement still open.
+
+See the [development guide](DEVELOPING.md) for architecture and local checks, and the [design guide](DESIGN.md) for workspace and chat conventions.

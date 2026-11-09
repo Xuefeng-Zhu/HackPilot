@@ -1,17 +1,28 @@
-# Visual Design Contract
+# HackPilot Design Guide
 
-Chat is a quiet, full-canvas conversation workbench. AgentKit owns the
-conversation primitives; the template owns the surrounding navigation and
-workspace chrome.
+HackPilot helps builders make decisions and track progress under a deadline.
+The hackathon workspace keeps the plan and evidence visible while Pilot acts
+on the same workspace from the sidebar. AgentKit owns the conversation
+primitives and the shared shell owns navigation.
 
-## Product mode
+## Hackathon workspace
 
-- Mode: `operate`
-- Audience and cadence: frequent users managing many ongoing agent threads.
-- Primary workflow: begin, resume, pin, and organize conversations without
-  leaving the chat canvas.
+- Keep the event name, deadline, and selected idea visible across Overview,
+  Ideas, Plan, and Checklist. Show the event timezone and the builder's local
+  time when they differ.
+- In Ideas, pair the weighted score with the criteria and rationale behind it.
+  Use the **Our pick** label to make the selected idea clear at a glance.
+- In Plan, organize work by milestone and due day. Make it easy to see what is
+  done, what is overdue, and where a task will land during a drag. Keep build
+  status, logs, and the resulting preview and ZIP near the plan.
+- In Checklist, keep each requirement beside its status and proof link. The
+  readiness check should point builders to the specific work still open.
+- Use neutral surfaces and the shared semantic tokens. Reserve the orange
+  `signal` tokens for deadline pressure, scores, the selected idea, and other
+  workspace emphasis. Pair color with text or icons, and use tabular numerals
+  for countdowns and scores.
 
-## Visual direction
+## Chat and navigation
 
 - Direction name: Quiet conversation library
 - Palette family: neutral ink and semantic surfaces; active rows use the

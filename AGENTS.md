@@ -1,6 +1,6 @@
-# Chat — Agent Guide
+# HackPilot — Agent Guide
 
-Chat is the minimal chat-first agent-native app. `/` redirects to shared sign-in, then `/home`, the editable Get started page. Chat lives at `/chat`; new chats start there. Actions carry capabilities; screens exist only for durable workflows.
+HackPilot is an Agent-Native workspace for hackathon ideas, sprint plans, starter builds, and submission readiness. `/` uses the shared sign-in flow, then lands on `/hackathons`. Pilot chat and the workspace use the same actions.
 
 ## Skills
 
@@ -19,12 +19,12 @@ For custom branding, keep `server/plugins/agent-native-email-branding.ts` aligne
 
 ## Application state
 
-- `navigation` describes the view and selected ids. Chat is `chat` at `/chat` and `/chat/<threadId>`; the Get started page is `home` at `/home`; `/` opens shared sign-in/signup.
+- `navigation` describes the view and selected ids. The list is `hackathons` at `/hackathons`. The `hackathon` view at `/hackathons/<hackathonId>` includes the active `tab`. Full-page chat is `chat` at `/chat` and `/chat/<threadId>`. The framework's Get started page is at `/home`.
 - Use `navigate` when supported and `view-screen` for a fresh read of visible details; basic navigation is already in `<current-screen>`.
 
-## Building a domain app
+## Changing HackPilot
 
-Choose the primary workflow and route before editing. Add a domain route under `app/routes/` and set `app.homePath` in `server/plugins/agent-native-email-branding.ts` with `defineAppConfig`. The default Get started page lives at `/home`, and Chat stays at `/chat`; edit `app/routes/home.tsx` when replacing that page with a domain-specific home. Add a static link in `app/components/layout/Sidebar.tsx` before `ChatThreadsSection`; `Header.tsx` uses `APP_TITLE` elsewhere. Shared sidebar and AgentInspector remain.
+Workspace routes live under `app/routes/hackathons*` and the UI lives in `app/components/hackpilot/`. The authenticated landing path is configured in `server/plugins/agent-native-email-branding.ts`. Keep navigation in the shared sidebar and pass workspace context through `askPilot`.
 
 Use `adding-a-feature` for functional parity and `frontend-design` for a user-facing screen. Keep feature guidance here; do not rewrite `README.md` or `DESIGN.md`. After all edits, run one typecheck, one doctor check, and one browser smoke of the primary workflow, including overlap rejection, cancellation freeing the slot, and authenticated landing. Skip production build and extra test suites.
 
