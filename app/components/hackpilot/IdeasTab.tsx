@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { IdeaOut, WorkspaceOut } from "@shared/outputs";
 
 import { askPilot } from "./ask-pilot";
+import { CompanionDraftButton, useCompanionApps } from "./CompanionDraftButton";
 import { useWorkspaceCache } from "./workspace-cache";
 
 function ScoreRing({ value }: { value: number | null }) {
@@ -150,6 +151,7 @@ function IdeaCard({
   idea,
   rank,
   ws,
+  designConnected,
   draggable,
   onEdit,
   onDelete,
@@ -160,6 +162,7 @@ function IdeaCard({
   idea: IdeaOut;
   rank: number;
   ws: WorkspaceOut;
+  designConnected: boolean | undefined;
   draggable: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -289,6 +292,9 @@ function IdeaCard({
               <IconRobot className="size-3.5" />
               Ask Pilot to judge
             </Button>
+            {idea.selected && designConnected !== undefined ? (
+              <CompanionDraftButton app="design" connected={designConnected} hackathon={h} />
+            ) : null}
             <Button size="sm" variant="ghost" onClick={onEdit} aria-label={`Edit ${idea.title}`}>
               <IconPencil className="size-3.5" />
             </Button>
@@ -319,6 +325,7 @@ function IdeaCard({
 
 export function IdeasTab({ ws }: { ws: WorkspaceOut }) {
   const h = ws.hackathon;
+  const companions = useCompanionApps(h.id, ws.progress.selectedIdeaId !== null);
   const [sortByScore, setSortByScore] = useState(false);
   const [editing, setEditing] = useState<IdeaOut | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -438,6 +445,7 @@ export function IdeasTab({ ws }: { ws: WorkspaceOut }) {
               idea={idea}
               rank={index + 1}
               ws={ws}
+              designConnected={companions?.canEdit ? companions.connected.design : undefined}
               draggable={!sortByScore}
               dragOver={overId === idea.id && dragId !== idea.id}
               onEdit={() => {
