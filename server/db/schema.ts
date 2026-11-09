@@ -127,7 +127,7 @@ export const builds = pgTable("hackathon_builds", {
   status: text("status").notNull().default("running"),
   /** Current stage key, e.g. "generating", "installing", "repairing". */
   stage: text("stage").notNull().default("queued"),
-  /** "llm" or "template" */
+  /** "llm", "template", or "fusion" */
   mode: text("mode").notNull().default("llm"),
   steps: jsonb("steps").$type<BuildStep[]>().notNull().default([]),
   files: jsonb("files").$type<BuildFile[]>().notNull().default([]),

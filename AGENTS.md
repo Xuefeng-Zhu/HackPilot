@@ -1,6 +1,6 @@
-# Chat — Agent Guide
+# HackPilot — Agent Guide
 
-Chat is the minimal chat-first agent-native app. `/` redirects to shared sign-in, then `/home`, the editable Get started page. Chat lives at `/chat`; new chats start there. Actions carry capabilities; screens exist only for durable workflows.
+HackPilot is an Agent-Native workspace for hackathon ideas, sprint plans, starter builds, and submission readiness. `/` uses the shared sign-in flow, then lands on `/hackathons`. Pilot chat and the workspace use the same actions.
 
 ## Skills
 
@@ -19,12 +19,12 @@ For custom branding, keep `server/plugins/agent-native-email-branding.ts` aligne
 
 ## Application state
 
-- `navigation` describes the view and selected ids. Chat is `chat` at `/chat` and `/chat/<threadId>`; the Get started page is `home` at `/home`; `/` opens shared sign-in/signup.
+- `navigation` describes the view and selected ids. The list is `hackathons` at `/hackathons`. The `hackathon` view at `/hackathons/<hackathonId>` includes the active `tab`. Full-page chat is `chat` at `/chat` and `/chat/<threadId>`. The framework's Get started page is at `/home`.
 - Use `navigate` when supported and `view-screen` for a fresh read of visible details; basic navigation is already in `<current-screen>`.
 
-## Building a domain app
+## Changing HackPilot
 
-Choose the primary workflow and route before editing. Add a domain route under `app/routes/` and set `app.homePath` in `server/plugins/agent-native-email-branding.ts` with `defineAppConfig`. The default Get started page lives at `/home`, and Chat stays at `/chat`; edit `app/routes/home.tsx` when replacing that page with a domain-specific home. Add a static link in `app/components/layout/Sidebar.tsx` before `ChatThreadsSection`; `Header.tsx` uses `APP_TITLE` elsewhere. Shared sidebar and AgentInspector remain.
+Workspace routes live under `app/routes/hackathons*` and the UI lives in `app/components/hackpilot/`. The authenticated landing path is configured in `server/plugins/agent-native-email-branding.ts`. Keep navigation in the shared sidebar and pass workspace context through `askPilot`.
 
 Use `adding-a-feature` for functional parity and `frontend-design` for a user-facing screen. Keep feature guidance here; do not rewrite `README.md` or `DESIGN.md`. After all edits, run one typecheck, one doctor check, and one browser smoke of the primary workflow, including overlap rejection, cancellation freeing the slot, and authenticated landing. Skip production build and extra test suites.
 
@@ -37,6 +37,7 @@ Before building common workspace or agent UI, read `agent-native-toolkit`; for s
 - `plan-sprint` (fresh | rebalance) builds a milestone plan: Idea locked (~10% of the window from import to deadline), Core works (~55%), Demo-ready (~85%), Submitted (deadline). Targets scale with the event length, never land in the past, and rebalance re-slots missed milestones. Milestones live on `hackathons.milestones`; tasks carry `milestone` + `day`.
 - `update-task` accepts `milestone` ("idea" | "core" | "demo" | "submit") to move a task; the due day is pulled inside the new milestone unless `day` is passed.
 - `build-project` ("Build it") generates a Vite + React + TS starter, then runs npm install → tsc → vite build → smoke test with up to 3 model repair rounds. Use the returned ID to poll `get-build` and open its preview or ZIP. `design: "auto"` reads the current user's linked Design prototype and keeps the build private. If that draft cannot be read, report the failure and let the user choose to retry or use `design: "off"`. `mode: "template"` uses neither Design nor a model. Regular builds check off Core works tasks on success. Private Design builds leave shared tasks and checklist items for the user to update.
+- `verify-fusion-build` takes a passed regular build ID and the Fusion Download Code ZIP as base64 (2 MiB ZIP limit). The Plan tab's Open in Fusion handoff is available for regular starters and uses the starter ZIP and a user-connected GitHub repo. Import & verify keeps the original dependencies, build configuration, and smoke test, then reruns checks in Docker as a separate `mode: "fusion"` run. Poll `get-build` for the log and verified source download. The verifier requires a local Docker daemon with `node:22-bookworm-slim` pre-pulled. View the edited preview in Fusion.
 - LLM calls go through `server/lib/llm.ts`: fast calls try NVIDIA then OpenRouter. Build it uses OpenRouter (`OPENROUTER_API_KEY`) with `deepseek/deepseek-v4.1-flash-1017` by default; `OPENROUTER_BUILD_MODEL` overrides it. DeepSeek uses low reasoning effort and build calls omit `max_tokens`; provider limits and timeouts still apply. See `.env.example`.
 - Companion apps: Ideas starts private Design drafts, Checklist starts Content and Slides drafts, and Pilot can create a hosted Plan snapshot on request. Use `get-companion-apps` for setup state and `companion-app-tool` for authorized discovery, creation, and read-back through personal MCP connections. Follow `.agents/skills/companion-apps/SKILL.md`.
 - Design is optional after picking an idea. Pass the original selected idea ID as `linkToIdeaId` on the `companion-app-tool` call that verifies `get-design`. Confirm `prototypeLink.status` is `saved` before reporting that the private shortcut is available in Ideas and Plan.

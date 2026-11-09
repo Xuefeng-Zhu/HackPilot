@@ -6,25 +6,13 @@ import { z } from "zod";
 import { getDb, schema } from "../server/db/index.js";
 import { buildAccessFilter, getBuildAuthUserId } from "../server/lib/build-access.js";
 import { serializeBuild } from "../server/lib/build-serialize.js";
+import { withBuildSlot } from "../server/lib/build-slot.js";
 import { reapInterrupted, startBuild, waitForBuild } from "../server/lib/builder.js";
 import { readDesignPrototypeForIdea } from "../server/lib/design-prototype.js";
 import { hackathonLink, nowIso, requireHackathon } from "../server/lib/workspace.js";
 import { buildOut } from "../shared/build.js";
 
 const boolParam = z.union([z.boolean(), z.enum(["true", "false"])]);
-const starting = new Map<string, Promise<unknown>>();
-
-/** Serialize claims through worker registration. Waiting for a build happens outside this slot. */
-async function withStartSlot<T>(hackathonId: string, claim: () => Promise<T>) {
-  const previous = starting.get(hackathonId);
-  const pending = (previous?.catch(() => undefined) ?? Promise.resolve()).then(claim);
-  starting.set(hackathonId, pending);
-  try {
-    return await pending;
-  } finally {
-    if (starting.get(hackathonId) === pending) starting.delete(hackathonId);
-  }
-}
 
 export default defineAction({
   description:
@@ -56,7 +44,7 @@ export default defineAction({
     const userEmail = request?.agentRunAnonymous
       ? undefined
       : request?.userEmail?.trim().toLowerCase();
-    const buildId = await withStartSlot(row.id, async () => {
+    const buildId = await withBuildSlot(row.id, async () => {
       const active = await reapInterrupted(row.id);
       if (active) return active;
       if (ctx?.signal?.aborted) {

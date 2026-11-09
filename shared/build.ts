@@ -5,6 +5,7 @@ import { z } from "zod";
 export const BUILD_STAGES = [
   "queued",
   "generating",
+  "importing",
   "installing",
   "typechecking",
   "building",
@@ -33,6 +34,8 @@ export const buildFileSchema = z.object({
 export type BuildFile = z.infer<typeof buildFileSchema>;
 
 export const buildMetaSchema = z.object({
+  /** Passed build whose toolchain and smoke test were used for verification. */
+  sourceBuildId: z.string().optional(),
   source: z.enum(["design", "idea"]).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
@@ -72,6 +75,7 @@ export const buildOut = z.object({
 export type BuildOut = z.infer<typeof buildOut>;
 
 export const MAX_REPAIR_ROUNDS = 3;
+export const MAX_FUSION_ARCHIVE_BYTES = 2 * 1024 * 1024;
 
 export function buildDownloadUrl(id: string) {
   return `/api/builds/${encodeURIComponent(id)}/zip`;

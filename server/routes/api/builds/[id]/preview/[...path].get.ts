@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
     .from(schema.builds)
     .where(and(eq(schema.builds.id, id), buildAccessFilter(session.authUserId)))
     .limit(1);
-  if (!row || row.status !== "passed") throw new HTTPError({ status: 404, message: "Build not found." });
+  if (!row || row.status !== "passed" || row.mode === "fusion") throw new HTTPError({ status: 404, message: "Build not found." });
   try {
     await runWithRequestContext({ userEmail: session.email, ...(orgId ? { orgId } : {}) }, () =>
       requireHackathon(row.hackathonId),

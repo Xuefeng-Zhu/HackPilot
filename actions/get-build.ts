@@ -14,7 +14,7 @@ import { buildOut } from "../shared/build.js";
 
 export default defineAction({
   description:
-    "Read a Build it run: status, steps, source, repair rounds, model/provider and cost, generated files, and download and preview URLs. Pass hackathonId for its latest accessible build, or buildId for one run. Pass file (a path from files) to also read its content. Design builds are only accessible to the person who started the build.",
+    "Read a Build it run or Fusion verification: status, steps, source, repair rounds, model/provider and cost, generated files, and download and preview URLs. Pass hackathonId for its latest accessible build, or buildId for one run. Pass file (a path from files) to also read its content. Design builds are only accessible to the person who started the build. Fusion runs have mode=fusion and meta.sourceBuildId.",
   schema: z.object({
     hackathonId: z.string().optional().describe("Hackathon id: returns its latest build"),
     buildId: z.string().optional().describe("A specific build id"),
