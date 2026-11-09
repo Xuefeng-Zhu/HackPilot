@@ -33,7 +33,7 @@ import { addDaysToKey, countdownLabel, dateKeyInZone, daysBetweenKeys } from "@s
 
 import { askPilot } from "./ask-pilot";
 import { BuildPanel } from "./BuildPanel";
-import { CompanionDraftButton, useCompanionApps } from "./CompanionDraftButton";
+import { DesignPrototypeLink, useCompanionApps } from "./CompanionDraftButton";
 import { useWorkspaceCache } from "./workspace-cache";
 
 const PHASE_STYLES: Record<string, string> = {
@@ -490,7 +490,10 @@ function DayGrid({
 export function PlanTab({ ws }: { ws: WorkspaceOut }) {
   const h = ws.hackathon;
   const hasSprint = ws.tasks.length > 0 && h.milestones.length > 0;
-  const companions = useCompanionApps(h.id, hasSprint);
+  const selectedIdea = ws.ideas.find((idea) => idea.selected);
+  const companions = useCompanionApps(h.id, Boolean(selectedIdea));
+  const savedPrototype = companions?.designPrototype;
+  const prototype = savedPrototype && savedPrototype.ideaId === selectedIdea?.id ? savedPrototype : null;
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = useNow();
   const today = dateKeyInZone(now, tz);
@@ -572,8 +575,8 @@ export function PlanTab({ ws }: { ws: WorkspaceOut }) {
           <IconRobot className="size-4" />
           Ask Pilot to re-plan
         </Button>
-        {hasSprint && companions?.canEdit ? (
-          <CompanionDraftButton app="plan" connected={companions.connected.plan} hackathon={h} />
+        {prototype ? (
+          <DesignPrototypeLink url={prototype.url} />
         ) : null}
         <div className="ml-auto flex items-center gap-3">
           <div className="inline-flex rounded-lg border border-border p-0.5 text-xs" role="group" aria-label="Plan view">
@@ -635,7 +638,7 @@ export function PlanTab({ ws }: { ws: WorkspaceOut }) {
         </div>
       )}
 
-      <BuildPanel ws={ws} />
+      <BuildPanel ws={ws} hasDesignPrototype={Boolean(prototype)} />
     </div>
   );
 }

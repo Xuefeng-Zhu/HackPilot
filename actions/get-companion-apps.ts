@@ -6,11 +6,12 @@ import {
   currentCompanionUser,
   listCompanionConnections,
 } from "../server/lib/companion-apps.js";
-import "../server/db/index.js";
+import { readDesignPrototype } from "../server/lib/design-prototype.js";
+import { COMPANION_ARTIFACT_ID_PATTERN } from "../shared/companion-apps.js";
 
 export default defineAction({
   description:
-    "Read this user's saved companion app connection status for a HackPilot workspace.",
+    "Read this user's companion app connections and selected idea's saved Design prototype.",
   schema: z.object({
     hackathonId: z.string().min(1).max(200).describe("Hackathon workspace ID"),
   }),
@@ -22,6 +23,13 @@ export default defineAction({
       plan: z.boolean(),
       design: z.boolean(),
     }),
+    designPrototype: z
+      .object({
+        ideaId: z.string(),
+        id: z.string().regex(COMPANION_ARTIFACT_ID_PATTERN),
+        url: z.url(),
+      })
+      .nullable(),
   }),
   agentTool: false,
   http: { method: "GET" },
@@ -36,16 +44,18 @@ export default defineAction({
       fail("Hackathon not found.", { errorCode: "not_found", statusCode: 404 });
     }
     const canEdit = roleSatisfies(access.role, "editor");
-    const connections = canEdit
-      ? await listCompanionConnections(userEmail)
-      : {};
+    const [connections, designPrototype] = await Promise.all([
+      canEdit ? listCompanionConnections(userEmail) : undefined,
+      readDesignPrototype(hackathonId, userEmail),
+    ]);
     return {
       canEdit,
+      designPrototype,
       connected: {
-        content: Boolean(connections.content),
-        slides: Boolean(connections.slides),
-        plan: Boolean(connections.plan),
-        design: Boolean(connections.design),
+        content: Boolean(connections?.content),
+        slides: Boolean(connections?.slides),
+        plan: Boolean(connections?.plan),
+        design: Boolean(connections?.design),
       },
     };
   },

@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   requireHackathon: vi.fn(),
   select: vi.fn(),
   limit: vi.fn(),
+  getUserSetting: vi.fn(),
+  putUserSetting: vi.fn(),
 }));
 
 vi.mock("@agent-native/core/mcp-client", () => ({
@@ -29,6 +31,10 @@ vi.mock("@agent-native/core/mcp-client", () => ({
 vi.mock("@agent-native/core/server", () => ({
   getRequestContext: mocks.currentContext,
 }));
+vi.mock("@agent-native/core/settings", () => ({
+  getUserSetting: mocks.getUserSetting,
+  putUserSetting: mocks.putUserSetting,
+}));
 vi.mock("./workspace.js", () => ({
   requireHackathon: mocks.requireHackathon,
 }));
@@ -43,6 +49,7 @@ import {
   invokeCompanionTool,
   listCompanionConnections,
 } from "./companion-apps.js";
+import { readDesignBuildReference } from "./design-build-reference.js";
 
 const userEmail = "editor@example.test";
 const context = { caller: "tool", userEmail } as const;
@@ -101,6 +108,66 @@ beforeEach(() => {
 });
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("Design input for builds", () => {
+  const url = "https://design.agent-native.com/mcp";
+  const index = {
+    filename: "index.html",
+    fileType: "html",
+    content: "<!doctype html><body><main><button>Save mission</button></main></body>",
+  };
+
+  beforeEach(() => {
+    mocks.listRemoteServers.mockResolvedValue([{ ...connection, url }]);
+    mocks.toHttpServerConfigAsync.mockResolvedValue({
+      type: "http",
+      url,
+      headers: { Authorization: "Bearer fake" },
+    });
+    mocks.getToolsForServer.mockReturnValue([
+      mcpTool("get-design", { id: { type: "string" }, includeFileContent: { type: "boolean" } }, ["id"], "design"),
+    ]);
+  });
+
+  it("reads the exact owned private draft with its saved file", async () => {
+    mocks.callTool.mockResolvedValue({
+      structuredContent: { design: { id: "saved", visibility: "private", accessRole: "owner", files: [index] } },
+    });
+
+    const reference = await readDesignBuildReference(userEmail, "saved");
+    expect(reference).toContain("Save mission");
+    expect(reference).not.toContain("<button>");
+    expect(mocks.listRemoteServers).toHaveBeenCalledWith("user", userEmail);
+    expect(mocks.callTool).toHaveBeenCalledWith("mcp__design__get-design", {
+      id: "saved",
+      includeFileContent: true,
+    });
+  });
+
+  it.each([
+    { id: "another" },
+    { accessRole: "editor" },
+    { visibility: "public" },
+    { files: [{ ...index, filename: "preview.html" }] },
+  ])("does not use an unverified draft (%j)", async (override) => {
+    mocks.callTool.mockResolvedValue({
+      structuredContent: { id: "saved", visibility: "private", accessRole: "owner", files: [index], ...override },
+    });
+
+    await expect(readDesignBuildReference(userEmail, "saved")).rejects.toMatchObject({
+      errorCode: "companion_readback_unverified",
+    });
+  });
+
+  it("reports a revoked connection without including its provider response", async () => {
+    mocks.toHttpServerConfigAsync.mockRejectedValue(new Error("private provider response"));
+    await expect(readDesignBuildReference(userEmail, "saved")).rejects.toMatchObject({
+      errorCode: "companion_auth_unavailable",
+      message: expect.not.stringContaining("private provider response"),
+    });
+    expect(mocks.callTool).not.toHaveBeenCalled();
+  });
+});
 
 describe("companion MCP boundary", () => {
   it("recognizes only the exact personal endpoint and keeps status local", async () => {
@@ -404,6 +471,75 @@ describe("companion action access and prerequisites", () => {
       errorCode: "companion_missing_sprint",
     });
     expect(mocks.listRemoteServers).not.toHaveBeenCalled();
+  });
+});
+
+describe("selected idea's private Design shortcut", () => {
+  const origin = "https://design.agent-native.com";
+  const args = {
+    operation: "invoke",
+    app: "design",
+    tool: "get-design",
+    hackathonId: "hackathon-id",
+    linkToIdeaId: "idea",
+    input: { id: "prototype" },
+  } as const;
+
+  beforeEach(() => {
+    mocks.listRemoteServers.mockResolvedValue([
+      { ...connection, url: `${origin}/mcp` },
+    ]);
+    mocks.getToolsForServer.mockReturnValue([
+      mcpTool("get-design", { id: {} }, ["id"], "design"),
+    ]);
+  });
+
+  const draft = (accessRole: "owner" | "viewer") => ({
+    structuredContent: {
+      id: "prototype",
+      accessRole,
+      visibility: "private",
+      files: [
+        {
+          filename: "index.html",
+          fileType: "html",
+          content: "<body>Prototype</body>",
+        },
+      ],
+    },
+  });
+
+  it("saves the confirmed artifact for the requesting user and selected idea", async () => {
+    mocks.callTool.mockResolvedValue(draft("owner"));
+    mocks.getUserSetting.mockResolvedValue({ id: "prototype" });
+
+    await expect(action.run(args, context)).resolves.toMatchObject({
+      status: "verified",
+      artifact: { url: `${origin}/design/prototype` },
+      prototypeLink: { ideaId: "idea", status: "saved" },
+    });
+    expect(mocks.putUserSetting).toHaveBeenCalledWith(
+      userEmail,
+      expect.stringContaining('["hackathon-id","idea"]'),
+      { id: "prototype" },
+    );
+  });
+
+  it("does not replace a shortcut using a draft the current user does not own", async () => {
+    mocks.callTool.mockResolvedValue(draft("viewer"));
+    await expect(action.run(args, context)).rejects.toMatchObject({
+      errorCode: "companion_readback_unverified",
+    });
+    expect(mocks.putUserSetting).not.toHaveBeenCalled();
+  });
+
+  it("rejects a stale idea selection before contacting Design", async () => {
+    mocks.limit.mockResolvedValue([{ id: "different-idea" }]);
+    await expect(action.run(args, context)).rejects.toMatchObject({
+      errorCode: "companion_idea_changed",
+    });
+    expect(mocks.callTool).not.toHaveBeenCalled();
+    expect(mocks.putUserSetting).not.toHaveBeenCalled();
   });
 });
 

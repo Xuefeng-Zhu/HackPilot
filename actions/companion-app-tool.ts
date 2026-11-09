@@ -1,5 +1,5 @@
 import { defineAction, fail } from "@agent-native/core/action";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
@@ -10,6 +10,10 @@ import {
   discoverCompanionTools,
   invokeCompanionTool,
 } from "../server/lib/companion-apps.js";
+import {
+  getSelectedIdeaId,
+  saveDesignPrototype,
+} from "../server/lib/design-prototype.js";
 import { requireHackathon } from "../server/lib/workspace.js";
 import {
   COMPANION_APP_IDS,
@@ -54,6 +58,14 @@ export default defineAction({
         .record(z.string(), z.json())
         .default({})
         .describe("Tool arguments from the discovered contract"),
+      linkToIdeaId: z
+        .string()
+        .min(1)
+        .max(200)
+        .optional()
+        .describe(
+          "For get-design only: link this verified private prototype to this selected HackPilot idea",
+        ),
     }),
   ]),
   http: false,
@@ -72,7 +84,8 @@ export default defineAction({
   toolCallable: false,
   timeoutMs: 30_000,
   retrySafe: (args) =>
-    args.operation === "discover" || !companionWrites(args.app, args.tool),
+    args.operation === "discover" ||
+    (!args.linkToIdeaId && !companionWrites(args.app, args.tool)),
   authorize: (_args, context) =>
     context?.caller === "tool" &&
     !context.networkProtocol &&
@@ -83,30 +96,34 @@ export default defineAction({
     const effect =
       args.operation === "invoke" &&
       companionOperation(args.app, args.tool)?.effect;
+    const linkToIdeaId =
+      args.operation === "invoke" ? args.linkToIdeaId : undefined;
+    if (linkToIdeaId && !(args.app === "design" && effect === "verify")) {
+      fail("Use linkToIdeaId only when verifying a prototype in Design.", {
+        errorCode: "invalid_companion_arguments",
+      });
+    }
     if (
       args.operation === "discover" ||
       effect === "create" ||
-      effect === "fill"
+      effect === "fill" ||
+      linkToIdeaId
     ) {
-      const db = getDb();
-      const [idea] = await db
-        .select({ id: schema.ideas.id })
-        .from(schema.ideas)
-        .where(
-          and(
-            eq(schema.ideas.hackathonId, args.hackathonId),
-            eq(schema.ideas.selected, true),
-          ),
-        )
-        .limit(1);
-      if (!idea) {
+      const ideaId = await getSelectedIdeaId(args.hackathonId);
+      if (linkToIdeaId && linkToIdeaId !== ideaId) {
+        fail("Select the prototype's idea before linking it in HackPilot.", {
+          errorCode: "companion_idea_changed",
+          statusCode: 409,
+        });
+      }
+      if (!ideaId) {
         fail(
           "Select an idea in HackPilot before starting a companion artifact.",
           { errorCode: "companion_missing_idea" },
         );
       }
       if (args.app === "plan") {
-        const [task] = await db
+        const [task] = await getDb()
           .select({ id: schema.tasks.id })
           .from(schema.tasks)
           .where(eq(schema.tasks.hackathonId, args.hackathonId))
@@ -119,14 +136,32 @@ export default defineAction({
         }
       }
     }
-    return args.operation === "discover"
-      ? discoverCompanionTools(args.app, userEmail)
-      : invokeCompanionTool(
-          args.app,
-          userEmail,
-          args.tool,
-          args.input,
-          context,
-        );
+    if (args.operation === "discover") {
+      return discoverCompanionTools(args.app, userEmail);
+    }
+    const result = await invokeCompanionTool(
+      args.app,
+      userEmail,
+      args.tool,
+      args.input,
+      context,
+      { requireOwnedDesign: Boolean(linkToIdeaId) },
+    );
+    if (!linkToIdeaId || result.status !== "verified") return result;
+    const saved =
+      !context?.signal?.aborted &&
+      await saveDesignPrototype(
+        args.hackathonId,
+        linkToIdeaId,
+        userEmail,
+        result.artifact.id,
+      );
+    return {
+      ...result,
+      prototypeLink: {
+        ideaId: linkToIdeaId,
+        status: saved ? "saved" : "unverified",
+      },
+    };
   },
 });

@@ -498,19 +498,57 @@ function hasFiveSlides(slides: unknown) {
   );
 }
 
-function hasDesignFiles(files: unknown) {
-  return (
-    Array.isArray(files) &&
-    files.some((entry) => {
-      const file = asRecord(entry);
-      return (
-        file?.filename === "index.html" &&
-        file.fileType === "html" &&
-        typeof file.content === "string" &&
-        nonempty(file.content)
-      );
-    })
-  );
+function designIndexHtml(files: unknown) {
+  if (!Array.isArray(files)) return undefined;
+  for (const entry of files) {
+    const file = asRecord(entry);
+    if (
+      file?.filename === "index.html" &&
+      file.fileType === "html" &&
+      typeof file.content === "string" &&
+      nonempty(file.content)
+    ) {
+      return file.content;
+    }
+  }
+}
+
+/** Server-only read. The raw Design HTML must never be returned by an action. */
+export async function readOwnedDesignIndexHtml(userEmail: string, id: string) {
+  if (!artifactId(id)) {
+    fail("The saved Design prototype ID is invalid.", {
+      errorCode: "companion_readback_unverified",
+    });
+  }
+  return withCompanion("design", userEmail, async (manager, tools) => {
+    const tool = tools.find((candidate) => candidate.originalName === "get-design");
+    const operation = operations.design["get-design"]!;
+    const schema = tool && contract(tool, operation);
+    if (!tool || !schema || !hasOwn(schema.properties, "id")) {
+      fail("The Design connection cannot read prototypes.", {
+        errorCode: "companion_readback_unavailable",
+      });
+    }
+    const args = operationInput(tool, operation, { id });
+    const raw = await manager.callTool(tool.name, args).catch(() => undefined);
+    const result = resultRecord(raw);
+    if (!result || result.error || result.ok === false) {
+      return remoteError("design", false);
+    }
+    const design = asRecord(result.design) ?? result;
+    const html = designIndexHtml(design.files ?? result.files);
+    if (
+      (resourceId(design) ?? resourceId(result)) !== id ||
+      design.accessRole !== "owner" ||
+      !confirmsPrivate(design, result) ||
+      !html
+    ) {
+      fail("Design did not confirm this private prototype and its index.html.", {
+        errorCode: "companion_readback_unverified",
+      });
+    }
+    return html;
+  });
 }
 
 function hasArtifactContent(
@@ -543,7 +581,7 @@ function hasArtifactContent(
       );
     }
     case "design":
-      return hasDesignFiles(resource.files ?? result.files);
+      return Boolean(designIndexHtml(resource.files ?? result.files));
   }
 }
 
@@ -553,6 +591,7 @@ export async function invokeCompanionTool(
   name: string,
   input: JsonRecord,
   context: ActionRunContext | undefined,
+  { requireOwnedDesign = false }: { requireOwnedDesign?: boolean } = {},
 ) {
   const operation = companionOperation(app, name);
   if (!operation)
@@ -888,6 +927,7 @@ export async function invokeCompanionTool(
         !id ||
         returnedId !== id ||
         !confirmsPrivate(resource, result) ||
+        (requireOwnedDesign && resource.accessRole !== "owner") ||
         !hasArtifactContent(app, resource, result)
       ) {
         fail(

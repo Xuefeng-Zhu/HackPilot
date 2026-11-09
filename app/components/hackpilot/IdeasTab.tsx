@@ -44,7 +44,11 @@ import { Textarea } from "@/components/ui/textarea";
 import type { IdeaOut, WorkspaceOut } from "@shared/outputs";
 
 import { askPilot } from "./ask-pilot";
-import { CompanionDraftButton, useCompanionApps } from "./CompanionDraftButton";
+import {
+  CompanionDraftButton,
+  DesignPrototypeLink,
+  useCompanionApps,
+} from "./CompanionDraftButton";
 import { useWorkspaceCache } from "./workspace-cache";
 
 function ScoreRing({ value }: { value: number | null }) {
@@ -152,6 +156,7 @@ function IdeaCard({
   rank,
   ws,
   designConnected,
+  prototypeUrl,
   draggable,
   onEdit,
   onDelete,
@@ -163,6 +168,7 @@ function IdeaCard({
   rank: number;
   ws: WorkspaceOut;
   designConnected: boolean | undefined;
+  prototypeUrl: string | undefined;
   draggable: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -292,9 +298,17 @@ function IdeaCard({
               <IconRobot className="size-3.5" />
               Ask Pilot to judge
             </Button>
-            {idea.selected && designConnected !== undefined ? (
-              <CompanionDraftButton app="design" connected={designConnected} hackathon={h} />
-            ) : null}
+            {idea.selected &&
+              (prototypeUrl ? (
+                <DesignPrototypeLink url={prototypeUrl} />
+              ) : designConnected !== undefined ? (
+                <CompanionDraftButton
+                  app="design"
+                  connected={designConnected}
+                  hackathon={h}
+                  ideaId={idea.id}
+                />
+              ) : null)}
             <Button size="sm" variant="ghost" onClick={onEdit} aria-label={`Edit ${idea.title}`}>
               <IconPencil className="size-3.5" />
             </Button>
@@ -325,7 +339,8 @@ function IdeaCard({
 
 export function IdeasTab({ ws }: { ws: WorkspaceOut }) {
   const h = ws.hackathon;
-  const companions = useCompanionApps(h.id, ws.progress.selectedIdeaId !== null);
+  const companions = useCompanionApps(h.id, ws.ideas.some((idea) => idea.selected));
+  const prototype = companions?.designPrototype;
   const [sortByScore, setSortByScore] = useState(false);
   const [editing, setEditing] = useState<IdeaOut | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -446,6 +461,7 @@ export function IdeasTab({ ws }: { ws: WorkspaceOut }) {
               rank={index + 1}
               ws={ws}
               designConnected={companions?.canEdit ? companions.connected.design : undefined}
+              prototypeUrl={prototype?.ideaId === idea.id ? prototype.url : undefined}
               draggable={!sortByScore}
               dragOver={overId === idea.id && dragId !== idea.id}
               onEdit={() => {

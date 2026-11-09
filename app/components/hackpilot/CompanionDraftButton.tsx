@@ -1,11 +1,11 @@
 import { useActionQuery } from "@agent-native/core/client/hooks";
 import { buildMcpOAuthStartUrl } from "@agent-native/core/client/resources/mcp-integration-catalog";
 import {
+  IconExternalLink,
   IconFileText,
   IconPalette,
   IconPlug,
   IconPresentation,
-  IconTimeline,
 } from "@tabler/icons-react";
 import { useLocation } from "react-router";
 
@@ -14,6 +14,8 @@ import { COMPANION_APPS, type CompanionApp } from "@shared/companion-apps";
 import type { WorkspaceOut } from "@shared/outputs";
 
 import { askPilot } from "./ask-pilot";
+
+type DraftButtonApp = Exclude<CompanionApp, "plan">;
 
 const WORKFLOWS = {
   content: {
@@ -30,22 +32,15 @@ const WORKFLOWS = {
     request:
       "Create a private pitch deck draft in Slides for this hackathon. Return its verified editor link.",
   },
-  plan: {
-    label: "Create visual plan",
-    tab: "plan",
-    icon: IconTimeline,
-    request:
-      "Create a private visual plan in Plan from the current HackPilot sprint. Return its verified editor link.",
-  },
   design: {
     label: "Draft UI in Design",
     tab: "ideas",
     icon: IconPalette,
     request:
-      "Create a private Design draft with a renderable screen for the selected idea. Return its verified editor link.",
+      "Create a private Design draft with a renderable screen for this idea. Link the verified prototype to the idea so I can open it from Plan.",
   },
 } satisfies Record<
-  CompanionApp,
+  DraftButtonApp,
   { label: string; tab: string; icon: typeof IconPlug; request: string }
 >;
 
@@ -53,17 +48,31 @@ export function useCompanionApps(hackathonId: string, enabled = true) {
   return useActionQuery("get-companion-apps", { hackathonId }, { enabled }).data;
 }
 
+export function DesignPrototypeLink({ url }: { url: string }) {
+  return (
+    <Button asChild variant="outline" size="sm">
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        Open prototype
+        <IconExternalLink className="size-3.5" aria-hidden="true" />
+      </a>
+    </Button>
+  );
+}
+
 export function CompanionDraftButton({
   app,
   connected,
   hackathon,
+  ideaId,
   className,
 }: {
-  app: CompanionApp;
   connected: boolean;
   hackathon: WorkspaceOut["hackathon"];
   className?: string;
-}) {
+} & (
+  | { app: "design"; ideaId: string }
+  | { app: Exclude<DraftButtonApp, "design">; ideaId?: never }
+)) {
   const location = useLocation();
   const { label, origin } = COMPANION_APPS[app];
   const workflow = WORKFLOWS[app];
@@ -98,6 +107,7 @@ export function CompanionDraftButton({
           id: hackathon.id,
           name: hackathon.name,
           tab: workflow.tab,
+          ...(ideaId ? { ideaId } : {}),
         })
       }
     >

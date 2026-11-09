@@ -119,6 +119,17 @@ CREATE INDEX IF NOT EXISTS hackathon_builds_parent_idx ON hackathon_builds (hack
 ALTER TABLE hackathon_tasks ADD COLUMN IF NOT EXISTS milestone TEXT;
 UPDATE hackathon_tasks SET milestone = CASE phase WHEN 'ideate' THEN 'idea' WHEN 'polish' THEN 'demo' WHEN 'record' THEN 'demo' WHEN 'submit' THEN 'submit' ELSE 'core' END WHERE milestone IS NULL`,
     },
+    {
+      version: 4,
+      name: "hackpilot-private-design-builds",
+      sql: `ALTER TABLE hackathon_builds
+  ADD COLUMN IF NOT EXISTS design_prototype_id TEXT,
+  ADD COLUMN IF NOT EXISTS design_owner_auth_id TEXT;
+ALTER TABLE hackathon_builds ADD CONSTRAINT hackathon_builds_design_scope_check CHECK (
+  (design_prototype_id IS NULL AND design_owner_auth_id IS NULL)
+  OR (design_prototype_id IS NOT NULL AND design_owner_auth_id IS NOT NULL AND org_id IS NULL)
+)`,
+    },
   ],
   { table: "hackpilot_migrations" },
 );

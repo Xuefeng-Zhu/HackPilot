@@ -33,6 +33,7 @@ export const buildFileSchema = z.object({
 export type BuildFile = z.infer<typeof buildFileSchema>;
 
 export const buildMetaSchema = z.object({
+  source: z.enum(["design", "idea"]).optional(),
   provider: z.string().optional(),
   model: z.string().optional(),
   /** Every model call, in order: "nvidia/<model>: ok in 31s". */
