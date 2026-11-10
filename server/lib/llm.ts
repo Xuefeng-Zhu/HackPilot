@@ -17,10 +17,7 @@
  */
 import { fail } from "@agent-native/core/action";
 import { AGENT_MODEL_CONFIG } from "@agent-native/core/agent/model-config";
-import {
-  readDeployCredentialEnv,
-  resolveSecret,
-} from "@agent-native/core/server";
+import { resolveSecret } from "@agent-native/core/server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject, type LanguageModel } from "ai";
@@ -34,7 +31,7 @@ const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 /** Benchmarked defaults (Nov 2026, see README "LLM providers"). */
 export const DEFAULT_NVIDIA_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
 export const DEFAULT_NVIDIA_BUILD_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
-export const DEFAULT_OPENROUTER_BUILD_MODEL = "deepseek/deepseek-v4.1-flash-1017";
+export const DEFAULT_OPENROUTER_BUILD_MODEL = "anthropic/claude-haiku-5.5";
 
 export type ProviderId = "nvidia" | "openrouter";
 export type Purpose = "fast" | "build";
@@ -47,15 +44,10 @@ interface ProviderTarget {
 }
 
 async function resolveKey(name: string): Promise<string | null> {
-  try {
-    const value = await resolveSecret(name);
-    if (value) return value;
-  } catch {
-    // Secret store unavailable (for example a bare CLI run): use deploy env.
-  }
-  return readDeployCredentialEnv(name) ?? process.env[name] ?? null;
+  return resolveSecret(name);
 }
 
+// guard:allow-env-credential — only nonsecret model and behavior settings use this helper
 const env = (name: string) => process.env[name]?.trim() || undefined;
 
 export function modelFor(provider: ProviderId, purpose: Purpose): string {

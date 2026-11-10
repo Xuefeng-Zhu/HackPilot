@@ -1,13 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const mockSecrets = vi.hoisted(() => ({} as Record<string, string | undefined>));
 vi.mock("@agent-native/core/server", () => ({
-  resolveSecret: async () => null,
-  readDeployCredentialEnv: () => null,
+  resolveSecret: vi.fn(async (name: string) => mockSecrets[name] || null),
 }));
 
+import { resolveSecret } from "@agent-native/core/server";
 import { chatWithFallback, providerChain } from "./llm";
 
-const env = (key: string, value?: string) => vi.stubEnv(key, value);
+const env = (key: string, value?: string) => {
+  if (key.endsWith("_API_KEY")) mockSecrets[key] = value;
+  vi.stubEnv(key, value);
+};
 
 function mockProviders() {
   env("NVIDIA_API_KEY", "nv-test");
@@ -26,10 +30,10 @@ afterEach(() => {
 });
 
 describe("build provider selection", () => {
-  it("selects DeepSeek on OpenRouter for builds and leaves fast calls NVIDIA-first", async () => {
+  it("selects Claude Haiku 5.5 on OpenRouter for builds and leaves fast calls NVIDIA-first", async () => {
     mockProviders();
     expect((await providerChain("build")).map(({ provider, model }) => ({ provider, model }))).toEqual([
-      { provider: "openrouter", model: "deepseek/deepseek-v4.1-flash-1017" },
+      { provider: "openrouter", model: "anthropic/claude-haiku-5.5" },
     ]);
     expect((await providerChain("fast")).map((t) => t.provider)).toEqual(["nvidia", "openrouter"]);
   });
@@ -41,7 +45,7 @@ describe("build provider selection", () => {
       { provider: "openrouter", model: "z-ai/glm-5.3" },
     ]);
     env("OPENROUTER_BUILD_MODEL", "  ");
-    expect((await providerChain("build"))[0]?.model).toBe("deepseek/deepseek-v4.1-flash-1017");
+    expect((await providerChain("build"))[0]?.model).toBe("anthropic/claude-haiku-5.5");
   });
 
   it("does not silently select NVIDIA when OpenRouter is missing or disabled", async () => {
@@ -53,11 +57,18 @@ describe("build provider selection", () => {
     env("HACKPILOT_DISABLE_PROVIDERS", "openrouter");
     expect(await providerChain("build")).toEqual([]);
   });
+
+  it("does not bypass the framework when it denies a deployment key", async () => {
+    mockProviders();
+    vi.mocked(resolveSecret).mockResolvedValueOnce(null);
+    expect(await providerChain("build")).toEqual([]);
+  });
 });
 
 describe("streamed model requests", () => {
   it("uses low reasoning and no output-token cap for DeepSeek builds, including when a caller supplies a cap", async () => {
     mockProviders();
+    env("OPENROUTER_BUILD_MODEL", "deepseek/deepseek-v4.1-flash-1017");
     const fetchMock = vi.fn(async () => new Response([
       'data: {"choices":[{"delta":{"reasoning":"private reasoning", "content":null}}]}\n\n',
       'data: {"choices":[{"delta":{"content":"=== FILE: src/App.tsx ==="}}]}\n\n',

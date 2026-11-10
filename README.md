@@ -32,11 +32,11 @@ Open the address printed by the dev server, then sign in to reach **Hackathons**
 
 ### LLM providers
 
-| Feature                        | Configuration                                                                                                                                                                               |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fast structured actions        | `NVIDIA_API_KEY` enables NVIDIA first. The default model is `nvidia/nemotron-3.5-super-vl-120b-a12b` and `NVIDIA_MODEL` overrides it. `OPENROUTER_API_KEY` enables the OpenRouter fallback. |
-| Build it generation and repair | Set `OPENROUTER_API_KEY`. The default is `deepseek/deepseek-v4.1-flash-1017` with low reasoning effort. Override it with `OPENROUTER_BUILD_MODEL`.                                          |
-| Pilot chat                     | Choose a provider in **Settings → AI engine**. A deployment with `OPENROUTER_API_KEY` configures OpenRouter for chat. `OPENROUTER_MODEL` can set its model.                                 |
+| Feature                        | Configuration                                                                                                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fast structured actions        | `NVIDIA_API_KEY` enables NVIDIA first. The default model is `nvidia/nemotron-3.5-super-vl-120b-a12b` and `NVIDIA_MODEL` overrides it. `OPENROUTER_API_KEY` enables the OpenRouter fallback.         |
+| Build it generation and repair | Set `OPENROUTER_API_KEY`. The default is `anthropic/claude-haiku-5.5`. Override it with `OPENROUTER_BUILD_MODEL`.                                                                                   |
+| Pilot chat                     | Choose a provider in **Settings → AI engine**. A deployment with `OPENROUTER_API_KEY` configures OpenRouter with `anthropic/claude-haiku-5.5` by default. `OPENROUTER_MODEL` can set another model. |
 
 A regular build falls back to a deterministic starter when model generation is unavailable or fails. Design builds require the build model and access to the linked prototype. See [`.env.example`](.env.example) for configuration options.
 

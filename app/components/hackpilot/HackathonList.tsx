@@ -69,7 +69,7 @@ export function ImportForm({ compact = false }: { compact?: boolean }) {
   function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!url.trim()) return;
-    toast.loading("Reading the hackathon page…", { id: "import", duration: 2500 });
+    toast.message("Reading the hackathon page…", { id: "import", duration: 2500 });
     importHackathon.mutate({
       url: url.trim(),
       ...(pasteOpen && pageText.trim() ? { pageText } : {}),

@@ -1,16 +1,19 @@
 import { defineAction, fail } from "@agent-native/core/action";
+import { accessFilter } from "@agent-native/core/sharing";
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
-import { buildSprintPlan, rebalanceToMilestones } from "../server/lib/planner.js";
+import {
+  buildSprintPlan,
+  rebalanceToMilestones,
+} from "../server/lib/planner.js";
 import {
   hackathonLink,
   nowIso,
   planStartAt,
   requireHackathon,
   serializeTask,
-  touchHackathon,
 } from "../server/lib/workspace.js";
 import {
   computeMilestones,
@@ -79,28 +82,42 @@ export default defineAction({
         { errorCode: "no_deadline" },
       );
     }
+    const deadlineAt = row.deadlineAt;
     const tz =
       args.timezone && isValidTimezone(args.timezone)
         ? args.timezone
         : row.timezone;
     let now = new Date();
-    if (args.today && isDateKey(args.today) && args.today !== dateKeyInZone(now, tz)) {
+    if (
+      args.today &&
+      isDateKey(args.today) &&
+      args.today !== dateKeyInZone(now, tz)
+    ) {
       const [y = 1970, m = 1, d = 1] = args.today.split("-").map(Number);
-      now = new Date(zonedWallTimeToUtcIso({ year: y, month: m, day: d, hour: 9, minute: 0 }, tz));
+      now = new Date(
+        zonedWallTimeToUtcIso(
+          { year: y, month: m, day: d, hour: 9, minute: 0 },
+          tz,
+        ),
+      );
     }
-    if (Date.parse(row.deadlineAt) <= now.getTime()) {
+    if (Date.parse(deadlineAt) <= now.getTime()) {
       fail("The deadline has passed, so there is nothing left to plan.", {
         errorCode: "deadline_passed",
       });
     }
     const db = getDb();
-    const { tasks, ideas, submissionItems, hackathons } = schema;
+    const { tasks, ideas, submissionItems, hackathons, hackathonShares } =
+      schema;
     const existing = await db
       .select()
       .from(tasks)
       .where(eq(tasks.hackathonId, row.id))
       .limit(500);
-    const msOf = (t: { milestone: string | null; phase: string }): MilestoneId =>
+    const msOf = (t: {
+      milestone: string | null;
+      phase: string;
+    }): MilestoneId =>
       isMilestoneId(t.milestone) ? t.milestone : milestoneForPhase(t.phase);
     const complete = Object.fromEntries(
       MILESTONE_IDS.map((id) => {
@@ -111,7 +128,7 @@ export default defineAction({
 
     const milestones = computeMilestones({
       startAt: planStartAt(row),
-      deadlineAt: row.deadlineAt,
+      deadlineAt,
       timezone: tz,
       now,
       complete,
@@ -121,49 +138,67 @@ export default defineAction({
 
     let created = 0;
     let removed = 0;
-    if (args.mode === "fresh") {
-      const [selected] = await db
-        .select({ title: ideas.title })
-        .from(ideas)
-        .where(and(eq(ideas.hackathonId, row.id), eq(ideas.selected, true)))
-        .limit(1);
-      const items = await db
-        .select({
-          label: submissionItems.label,
-          kind: submissionItems.kind,
-          status: submissionItems.status,
-        })
-        .from(submissionItems)
-        .where(eq(submissionItems.hackathonId, row.id))
-        .limit(100);
-      const plan = buildSprintPlan({
-        todayKey: dateKeyInZone(now, tz),
-        deadlineKey: dateKeyInZone(new Date(row.deadlineAt), tz),
-        deadlineLabel: formatInZone(row.deadlineAt, tz, {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          timeZoneName: "short",
-        }),
-        ideaTitle: selected?.title ?? null,
-        rubric: row.rubric,
-        submission: items,
-        focus: args.focus,
-        milestones,
-        timezone: tz,
-        now,
-      });
-      const stale = existing
-        .filter((t) => t.source === "plan" && !t.done)
-        .map((t) => t.id);
-      const doneTitles = new Set(
-        existing.filter((t) => t.done).map((t) => t.title),
-      );
-      const fresh = plan.filter((p) => !doneTitles.has(p.title));
-      const ownerEmail = ctx?.userEmail ?? row.ownerEmail;
-      await db.transaction(async (tx) => {
+    const moved = await db.transaction(async (tx) => {
+      // Recheck edit access when committing, after the plan has been prepared.
+      const [updated] = await tx
+        .update(hackathons)
+        .set({ milestones, updatedAt: nowIso() })
+        .where(
+          and(
+            eq(hackathons.id, row.id),
+            accessFilter(hackathons, hackathonShares, undefined, "editor"),
+          ),
+        )
+        .returning({ id: hackathons.id });
+      if (!updated) {
+        fail("Hackathon not found or you can't edit it.", {
+          errorCode: "not_found",
+          statusCode: 404,
+          details: { hackathonId: row.id },
+        });
+      }
+      if (args.mode === "fresh") {
+        const [selected] = await tx
+          .select({ title: ideas.title })
+          .from(ideas)
+          .where(and(eq(ideas.hackathonId, row.id), eq(ideas.selected, true)))
+          .limit(1);
+        const items = await tx
+          .select({
+            label: submissionItems.label,
+            kind: submissionItems.kind,
+            status: submissionItems.status,
+          })
+          .from(submissionItems)
+          .where(eq(submissionItems.hackathonId, row.id))
+          .limit(100);
+        const plan = buildSprintPlan({
+          todayKey: dateKeyInZone(now, tz),
+          deadlineKey: dateKeyInZone(new Date(deadlineAt), tz),
+          deadlineLabel: formatInZone(deadlineAt, tz, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            timeZoneName: "short",
+          }),
+          ideaTitle: selected?.title ?? null,
+          rubric: row.rubric,
+          submission: items,
+          focus: args.focus,
+          milestones,
+          timezone: tz,
+          now,
+        });
+        const stale = existing
+          .filter((t) => t.source === "plan" && !t.done)
+          .map((t) => t.id);
+        const doneTitles = new Set(
+          existing.filter((t) => t.done).map((t) => t.title),
+        );
+        const fresh = plan.filter((p) => !doneTitles.has(p.title));
+        const ownerEmail = ctx?.userEmail ?? row.ownerEmail;
         if (stale.length) {
           await tx
             .delete(tasks)
@@ -189,29 +224,28 @@ export default defineAction({
             })),
           );
         }
-      });
-      removed = stale.length;
-      created = fresh.length;
-    }
+        removed = stale.length;
+        created = fresh.length;
+      }
 
-    // Persist the backbone, then pull stranded tasks into their milestone.
-    await db
-      .update(hackathons)
-      .set({ milestones, updatedAt: nowIso() })
-      .where(eq(hackathons.id, row.id));
-    const after = await db
-      .select()
-      .from(tasks)
-      .where(eq(tasks.hackathonId, row.id))
-      .limit(500);
-    const moves = rebalanceToMilestones(
-      after.map((t) => ({ id: t.id, day: t.day, done: t.done, milestone: msOf(t) })),
-      milestones,
-      tz,
-      now,
-    );
-    const backfill = after.filter((t) => !isMilestoneId(t.milestone));
-    await db.transaction(async (tx) => {
+      // Pull stranded tasks into their milestone in the same transaction.
+      const after = await tx
+        .select()
+        .from(tasks)
+        .where(eq(tasks.hackathonId, row.id))
+        .limit(500);
+      const moves = rebalanceToMilestones(
+        after.map((t) => ({
+          id: t.id,
+          day: t.day,
+          done: t.done,
+          milestone: msOf(t),
+        })),
+        milestones,
+        tz,
+        now,
+      );
+      const backfill = after.filter((t) => !isMilestoneId(t.milestone));
       for (const [id, day] of moves) {
         await tx
           .update(tasks)
@@ -224,9 +258,8 @@ export default defineAction({
           .set({ milestone: msOf(t) })
           .where(and(eq(tasks.id, t.id), eq(tasks.hackathonId, row.id)));
       }
+      return moves.size;
     });
-    const moved = moves.size;
-    await touchHackathon(row.id);
     const final = await db
       .select()
       .from(tasks)

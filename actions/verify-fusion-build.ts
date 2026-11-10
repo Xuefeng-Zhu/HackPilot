@@ -19,7 +19,7 @@ const requiredSource = ["index.html", "src/App.tsx", "src/main.tsx"];
 
 export default defineAction({
   description:
-    "Verify a Builder.io Fusion source ZIP returned from a passed HackPilot starter built without a Design prototype. Pass the original buildId and the ZIP encoded as base64 (up to 2 MiB before encoding). Keep the original dependencies, build config, and smoke test. Runs an isolated typecheck, build, and smoke test without model repair. Poll get-build with the returned id for results and the verified source download.",
+    "Verify a Builder.io Fusion source ZIP returned from a passed HackPilot starter. Pass the original buildId and the ZIP encoded as base64 (up to 2 MiB before encoding). Keep the original dependencies, build config, and smoke test. Verification of private Design builds stays private to the initiating account. Poll get-build with the returned id for results and the verified source download.",
   schema: z.object({
     buildId: z.string().uuid().describe("Passed starter build ID used in Fusion"),
     archive: z.string().min(1).max(4 * Math.ceil(MAX_FUSION_ARCHIVE_BYTES / 3)).describe("Fusion Download Code ZIP as base64"),
@@ -36,9 +36,8 @@ export default defineAction({
       .limit(1);
     if (!source) fail("Build not found.", { errorCode: "not_found", statusCode: 404 });
     const hackathon = await requireHackathon(source.hackathonId, "editor");
-    if (source.designPrototypeId !== null) {
-      fail("Build without a Design prototype to use Fusion verification.", { errorCode: "design_build_private", statusCode: 409 });
-    }
+    const fromDesign = source.designPrototypeId !== null;
+    const starterSource = fromDesign ? "design" : "idea";
     const sourceDir = source.dir;
     if (source.status !== "passed" || !sourceDir) {
       fail("Start with a passed starter build.", { errorCode: "source_build_required", statusCode: 409 });
@@ -67,7 +66,8 @@ export default defineAction({
           fail(`The starter's ${name} is unavailable. Run Build it again and use its ZIP.`, { errorCode: "source_build_unavailable", statusCode: 409 });
         }
         const incoming = files.get(name);
-        if ((!incoming && name !== "package-lock.json") || (incoming && !incoming.equals(original))) {
+        // Older ZIPs omit the lockfile, and Fusion can regenerate it. Always use ours.
+        if (name !== "package-lock.json" && !incoming?.equals(original)) {
           fail(`Keep ${name} from the original starter. Fusion verification reuses the original toolchain and smoke test.`, { errorCode: "fusion_toolchain_changed" });
         }
         files.set(name, original);
@@ -83,13 +83,15 @@ export default defineAction({
         hackathonId: hackathon.id,
         ideaId: source.ideaId,
         ideaTitle: source.ideaTitle,
+        designPrototypeId: source.designPrototypeId,
+        designOwnerAuthId: source.designOwnerAuthId,
         mode: "fusion",
-        meta: { sourceBuildId: source.id },
+        meta: { source: starterSource, sourceBuildId: source.id },
         steps: [{ at: nowIso(), stage: "queued", label: "Verify Fusion edits", status: "info" }],
-        ownerEmail: ctx?.userEmail ?? hackathon.ownerEmail,
-        orgId: hackathon.orgId,
+        ownerEmail: fromDesign ? source.ownerEmail : ctx?.userEmail ?? hackathon.ownerEmail,
+        orgId: fromDesign ? null : hackathon.orgId,
       }).returning();
-      startBuild(id, { sourceBuildId: source.id, files });
+      startBuild(id, { sourceBuildId: source.id, starterSource, files });
       return serializeBuild(build!);
     });
   },

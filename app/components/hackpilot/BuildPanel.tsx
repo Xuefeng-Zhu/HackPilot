@@ -155,7 +155,7 @@ export function BuildPanel({ ws, hasDesignPrototype }: { ws: WorkspaceOut; hasDe
   const designBuild = build?.meta.source === "design";
   const fusion = build?.mode === "fusion";
   const passedBuildId = build?.status === "passed" && build.downloadUrl ? build.id : undefined;
-  const fusionSourceId = designBuild ? undefined : passedBuildId ?? (fusion ? build.meta.sourceBuildId : undefined);
+  const fusionSourceId = passedBuildId ?? (fusion ? build.meta.sourceBuildId : undefined);
   const originalZip = fusionSourceId ? buildDownloadUrl(fusionSourceId) : null;
   const downloadUrl = build?.downloadUrl ?? originalZip;
 
@@ -333,6 +333,11 @@ export function BuildPanel({ ws, hasDesignPrototype }: { ws: WorkspaceOut; hasDe
             </Button>
             <input ref={archiveInput} type="file" aria-label="Fusion ZIP" accept=".zip,application/zip" hidden onChange={importArchive} />
           </div>
+          {designBuild ? (
+            <p className="text-xs text-muted-foreground">
+              Use a private GitHub repository connected to Fusion. Only you can access the verified ZIP in HackPilot.
+            </p>
+          ) : null}
           <details className="text-xs text-muted-foreground">
             <summary className="w-fit cursor-pointer hover:text-foreground">How to edit this starter in Fusion</summary>
             <p className="mt-1.5 max-w-prose leading-relaxed">
@@ -415,7 +420,7 @@ export function BuildPanel({ ws, hasDesignPrototype }: { ws: WorkspaceOut; hasDe
               <IconAlertTriangle className="mt-0.5 size-4 shrink-0" />
               <div>
                 <p>{build.error ?? "The build failed."}</p>
-                {designBuild && hasDesignPrototype && build.ideaId === selected?.id ? (
+                {designBuild && !fusion && hasDesignPrototype && build.ideaId === selected?.id ? (
                   <p className="mt-1 text-xs">Retry with Build again, or clear Use Design prototype to start a regular build.</p>
                 ) : null}
               </div>

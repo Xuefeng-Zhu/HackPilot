@@ -55,7 +55,7 @@ production deployments need a stable `BETTER_AUTH_SECRET`.
 Fast structured actions try NVIDIA first and fall back to OpenRouter when
 configured. Model-generated builds and repairs use OpenRouter with
 `OPENROUTER_API_KEY`. Set `OPENROUTER_BUILD_MODEL` to override
-`deepseek/deepseek-v4.1-flash-1017`. Template mode runs without a model. Provider
+`anthropic/claude-haiku-5.5`. Template mode runs without a model. Provider
 credentials resolve through the scoped secret store with a deployment
 environment fallback. Pilot chat uses the framework's separate AI engine
 configuration. Keep credential values in the local environment, deployment

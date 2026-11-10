@@ -42,6 +42,7 @@ import { chatWithFallback, type ChatMessage, providerChain } from "./llm.js";
 import { nowIso, requireHackathon } from "./workspace.js";
 
 export const BUILD_ROOT = path.resolve(
+  // guard:allow-env-credential — this is an operator-configured directory, not a credential
   process.env.HACKPILOT_BUILD_DIR?.trim() || path.join(process.cwd(), "data", "builds"),
 );
 
@@ -156,10 +157,10 @@ interface RunResult {
   timedOut: boolean;
 }
 
-function run(cmd: string, args: string[], cwd: string, timeoutMs: number): Promise<RunResult> {
+function run(cmd: string, args: string[], cwd: string, timeoutMs: number, env = childEnv()): Promise<RunResult> {
   const t0 = Date.now();
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { cwd, env: childEnv(), stdio: ["ignore", "pipe", "pipe"], detached: true });
+    const child = spawn(cmd, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"], detached: true });
     let out = "";
     const add = (b: Buffer) => {
       out += b.toString();
@@ -359,6 +360,11 @@ function ideaPrompt(input: StarterInput & { rubric: string; requirements: string
 // ---------------------------------------------------------------- pipeline
 
 type CheckStage = "typechecking" | "building" | "testing";
+const fusionOperation: Record<CheckStage, string> = {
+  typechecking: "typecheck",
+  building: "build",
+  testing: "smoke",
+};
 const CHECKS: { stage: CheckStage; label: string; cmd: "npx"; args: string[]; timeoutMs: number }[] = [
   { stage: "typechecking", label: "Typecheck (tsc --noEmit)", cmd: "npx", args: ["--no-install", "tsc", "--noEmit", "-p", "."], timeoutMs: 120_000 },
   { stage: "building", label: "Production build (vite build)", cmd: "npx", args: ["--no-install", "vite", "build", "--base", "./", "--logLevel", "warn"], timeoutMs: 120_000 },
@@ -383,7 +389,7 @@ async function runChecks(
 
 async function install(dir: string, p: Progress, label = "Install dependencies (npm install)"): Promise<boolean> {
   const t0 = await p.begin("installing", label);
-  const r = await run("npm", ["install", "--no-audit", "--no-fund", "--loglevel=error", "--prefer-offline"], dir, 240_000);
+  const r = await run("npm", ["install", "--include=optional", "--no-audit", "--no-fund", "--loglevel=error"], dir, 240_000);
   await p.end(t0, r.ok ? "ok" : "fail", r.ok ? undefined : tail(r.output, 1500) || (r.timedOut ? "timed out" : "failed"));
   return r.ok;
 }
@@ -409,7 +415,7 @@ async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress,
     const r = await chatWithFallback(messages, {
       purpose: "build",
       timeoutMs: 480_000,
-      firstTokenMs: 60_000,
+      firstTokenMs: 120_000,
       skip,
     });
     p.meta.calls?.push(...r.attempts);
@@ -440,7 +446,7 @@ async function repair(dir: string, failing: { label: string; output: string }, r
   for (let attempt = 0; attempt < 2; attempt++) {
     const chain = await providerChain("build");
     if (!chain.some((t) => !skip.includes(t.provider))) skip.length = 0;
-    const r = await chatWithFallback(messages, { purpose: "build", timeoutMs: 300_000, firstTokenMs: 60_000, skip });
+    const r = await chatWithFallback(messages, { purpose: "build", timeoutMs: 300_000, firstTokenMs: 120_000, skip });
     p.meta.calls?.push(...r.attempts.map((a) => `repair ${round}: ${a}`));
     if (r.cost != null) p.meta.cost = (p.meta.cost ?? 0) + r.cost;
     if (r.completionTokens != null) p.meta.completionTokens = (p.meta.completionTokens ?? 0) + r.completionTokens;
@@ -662,9 +668,7 @@ async function pipeline(buildId: string) {
   }
   const zipPath = path.join(root, "starter.zip");
   await fs.rm(zipPath, { force: true });
-  const excluded = ["node_modules/*", "dist/*"];
-  if (fromDesign) excluded.push("package-lock.json");
-  const z = await run("zip", ["-qr", zipPath, ".", "-x", ...excluded], dir, 60_000);
+  const z = await run("zip", ["-qr", zipPath, ".", "-x", "node_modules/*", "dist/*"], dir, 60_000);
   if (z.ok) p.meta.zipBytes = (await fs.stat(zipPath)).size;
   if (fromDesign && !z.ok) {
     const message = "Could not package the private source ZIP. Retry the build.";
@@ -689,14 +693,28 @@ async function pipeline(buildId: string) {
   await p.finish("passed", { files: await listFiles(dir), error: null });
 }
 
-type FusionSource = { sourceBuildId: string; files: Map<string, Buffer> };
+type FusionSource = {
+  sourceBuildId: string;
+  starterSource: "design" | "idea";
+  files: Map<string, Buffer>;
+};
 
 async function verifyFusion(buildId: string, source: FusionSource) {
-  const p = new Progress(buildId, "idea");
+  const p = new Progress(buildId, source.starterSource);
   p.meta.sourceBuildId = source.sourceBuildId;
   const root = path.join(BUILD_ROOT, buildId);
   const dir = path.join(root, "app");
   const sandbox = path.join(root, "verification");
+  const verifier = process.env.NODE_ENV === "development"
+    ? process.env.AGENT_NATIVE_FUSION_VERIFIER?.trim()
+    : undefined;
+  if (verifier && !path.isAbsolute(verifier)) {
+    throw new Error("The configured Fusion verifier must be an absolute executable path.");
+  }
+  const runVerifier = verifier
+    ? (operation: string, timeoutMs: number) =>
+        run(verifier, [sandbox, operation], root, timeoutMs, { PATH: "/usr/bin:/bin" })
+    : undefined;
   const importing = await p.begin("importing", "Stage the edited Fusion starter");
   await fs.mkdir(dir, { recursive: true });
   for (const [relative, content] of source.files) {
@@ -713,18 +731,25 @@ async function verifyFusion(buildId: string, source: FusionSource) {
     await fs.cp(dir, sandbox, { recursive: true });
     const runner = createFusionRunner(sandbox);
     const installStart = await p.begin("installing", "Install original dependencies in isolation");
-    const install = await runner.run("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], 240_000);
+    const install = await (runVerifier
+      ? runVerifier("install", 270_000)
+      : runner.run("npm", ["ci", "--ignore-scripts", "--no-audit", "--no-fund"], 240_000));
     await p.end(installStart, install.ok ? "ok" : "fail", tail(install.output.trim(), install.ok ? 300 : 2500) || undefined);
     if (!install.ok) {
       await p.finish("failed", { error: "Could not prepare the isolated verifier. See the build log." });
       return;
     }
-    const failed = await runChecks(p, (check) => runner.run(check.cmd, check.args, check.timeoutMs));
+    const failed = await runChecks(p, (check) => runVerifier
+      ? runVerifier(fusionOperation[check.stage], check.timeoutMs + 20_000)
+      : runner.run(check.cmd, check.args, check.timeoutMs));
     if (failed) {
       await p.finish("failed", { error: `${failed.label} failed. Fix the source in Fusion and upload the ZIP again.` });
       return;
     }
   } finally {
+    if (runVerifier && !(await runVerifier("cleanup", 20_000)).ok) {
+      console.warn(`[build ${buildId}] could not clean up the configured Fusion verifier workspace`);
+    }
     await fs.rm(sandbox, { force: true, recursive: true }).catch(() => undefined);
   }
 

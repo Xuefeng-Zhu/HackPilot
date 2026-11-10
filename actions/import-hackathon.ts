@@ -1,4 +1,8 @@
-import { defineAction, defineActionErrors } from "@agent-native/core/action";
+import {
+  defineAction,
+  defineActionErrors,
+  fail,
+} from "@agent-native/core/action";
 import { accessFilter } from "@agent-native/core/sharing";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -16,8 +20,8 @@ import {
   nowIso,
   requireHackathon,
 } from "../server/lib/workspace.js";
-import { normalizeTimezone } from "../shared/time.js";
 import { preserveRubricIds } from "../shared/hackpilot.js";
+import { normalizeTimezone } from "../shared/time.js";
 
 const errors = defineActionErrors("already_imported", "unauthenticated");
 
@@ -108,7 +112,15 @@ export default defineAction({
     }
 
     const page = args.pageText?.trim()
-      ? { url, html: "", ...htmlToText(args.pageText.includes("<") ? args.pageText : args.pageText.replace(/\n/g, "<br>")) }
+      ? {
+          url,
+          html: "",
+          ...htmlToText(
+            args.pageText.includes("<")
+              ? args.pageText
+              : args.pageText.replace(/\n/g, "<br>"),
+          ),
+        }
       : await fetchPage(url);
     const extracted = await extractFromPage(page, args.mode ?? "auto");
     const timezone = args.timezone
@@ -118,80 +130,98 @@ export default defineAction({
     const sourceText = page.text.slice(0, MAX_SOURCE_TEXT);
 
     const id = existing?.id ?? crypto.randomUUID();
-    if (existing) {
-      await db
-        .update(hackathons)
-        .set({
+    const requirementsAdded = await db.transaction(async (tx) => {
+      if (existing) {
+        const [updated] = await tx
+          .update(hackathons)
+          .set({
+            url,
+            name: extracted.name || existing.name,
+            tagline: extracted.tagline ?? existing.tagline,
+            deadlineAt: extracted.deadlineAt ?? existing.deadlineAt,
+            timezone,
+            prizes: extracted.prizes.length
+              ? extracted.prizes
+              : existing.prizes,
+            rubric: extracted.rubric.length
+              ? preserveRubricIds(existing.rubric, extracted.rubric)
+              : existing.rubric,
+            sourceText,
+            extraction: extracted.method,
+            importedAt: now,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(hackathons.id, id),
+              accessFilter(hackathons, hackathonShares, undefined, "editor"),
+            ),
+          )
+          .returning({ id: hackathons.id });
+        if (!updated) {
+          fail("Hackathon not found or you can't edit it.", {
+            errorCode: "not_found",
+            statusCode: 404,
+            details: { hackathonId: id },
+          });
+        }
+      } else {
+        await tx.insert(hackathons).values({
+          id,
+          name: extracted.name,
           url,
-          name: extracted.name || existing.name,
-          tagline: extracted.tagline ?? existing.tagline,
-          deadlineAt: extracted.deadlineAt ?? existing.deadlineAt,
+          tagline: extracted.tagline,
+          deadlineAt: extracted.deadlineAt,
           timezone,
-          prizes: extracted.prizes.length ? extracted.prizes : existing.prizes,
-          rubric: extracted.rubric.length
-            ? preserveRubricIds(existing.rubric, extracted.rubric)
-            : existing.rubric,
+          prizes: extracted.prizes,
+          rubric: extracted.rubric,
           sourceText,
           extraction: extracted.method,
           importedAt: now,
+          createdAt: now,
           updatedAt: now,
-        })
-        .where(eq(hackathons.id, id));
-    } else {
-      await db.insert(hackathons).values({
-        id,
-        name: extracted.name,
-        url,
-        tagline: extracted.tagline,
-        deadlineAt: extracted.deadlineAt,
-        timezone,
-        prizes: extracted.prizes,
-        rubric: extracted.rubric,
-        sourceText,
-        extraction: extracted.method,
-        importedAt: now,
-        createdAt: now,
-        updatedAt: now,
-        ownerEmail,
-        orgId,
-        visibility: orgId ? "org" : "private",
-      });
-    }
-
-    // Checklist: add requirement kinds not already present.
-    const currentItems = existing
-      ? await db
-          .select({
-            kind: submissionItems.kind,
-            position: submissionItems.position,
-          })
-          .from(submissionItems)
-          .where(eq(submissionItems.hackathonId, id))
-          .limit(100)
-      : [];
-    const haveKinds = new Set(currentItems.map((i) => i.kind));
-    let position = currentItems.reduce(
-      (m, i) => Math.max(m, i.position + 1),
-      0,
-    );
-    const toAdd = extracted.requirements.filter(
-      (r) => r.kind === "other" || !haveKinds.has(r.kind),
-    );
-    if (toAdd.length) {
-      await db.insert(submissionItems).values(
-        toAdd.map((r) => ({
-          id: crypto.randomUUID(),
-          hackathonId: id,
-          label: r.label,
-          kind: r.kind,
-          detail: r.detail ?? null,
-          status: "todo",
-          position: position++,
           ownerEmail,
-          orgId: existing?.orgId ?? orgId,
-        })),
+          orgId,
+          visibility: orgId ? "org" : "private",
+        });
+      }
+
+      // Checklist: add requirement kinds not already present.
+      const currentItems = existing
+        ? await tx
+            .select({
+              kind: submissionItems.kind,
+              position: submissionItems.position,
+            })
+            .from(submissionItems)
+            .where(eq(submissionItems.hackathonId, id))
+            .limit(100)
+        : [];
+      const haveKinds = new Set(currentItems.map((i) => i.kind));
+      let position = currentItems.reduce(
+        (m, i) => Math.max(m, i.position + 1),
+        0,
       );
-    }
+      const toAdd = extracted.requirements.filter(
+        (r) => r.kind === "other" || !haveKinds.has(r.kind),
+      );
+      if (toAdd.length) {
+        await tx.insert(submissionItems).values(
+          toAdd.map((r) => ({
+            id: crypto.randomUUID(),
+            hackathonId: id,
+            label: r.label,
+            kind: r.kind,
+            detail: r.detail ?? null,
+            status: "todo",
+            position: position++,
+            ownerEmail,
+            orgId: existing?.orgId ?? orgId,
+          })),
+        );
+      }
+      return toAdd.length;
+    });
 
     const name = extracted.name || existing?.name || "Hackathon";
     return {
@@ -204,9 +234,9 @@ export default defineAction({
       timezone,
       prizes: extracted.prizes.length,
       criteria: extracted.rubric.length,
-      requirementsAdded: toAdd.length,
+      requirementsAdded,
       warnings: extracted.warnings,
-      message: `${existing ? "Re-imported" : "Imported"} ${name} (${extracted.method}): ${extracted.rubric.length} criteria, ${extracted.prizes.length} prizes, ${toAdd.length} checklist items.`,
+      message: `${existing ? "Re-imported" : "Imported"} ${name} (${extracted.method}): ${extracted.rubric.length} criteria, ${extracted.prizes.length} prizes, ${requirementsAdded} checklist items.`,
       nextRequiredAction: extracted.warnings.length
         ? "update-hackathon"
         : "add-ideas",
