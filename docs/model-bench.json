@@ -1,0 +1,3187 @@
+{
+ "runAt": "2026-11-10T18:35-08:00 to 19:05-08:00",
+ "gateway": "https://api.otari.ai/api/v1/chat/completions",
+ "method": "Each model 2x per role with the app's real system prompt + json_schema response_format (strict:false), temperature 0.2, max_tokens 8000 (tools: 2000), client timeout 105 s. Scoring in Python; ideas rated by hand.",
+ "input": {
+  "page": "https://dorahacks.io/hackathon/mozilla-devs-wilding/detail (fetched 2026-11-10) + linked rubric Google Doc text appended (the app would only see the DoraHacks page; rubric weights live in the doc)",
+  "pageText": "Prize Pool\n1,200 USD\nevent timeline (UTC)\n14 hours left for submission\nSubmission\n2026/10/28 16:00\nDeadline\n2026/11/11 16:59\nVirtual\nHackathon Tags\nopen source ai, llm gateway, open source, ai, llm, online\nPlatform technology\nOpen weight models\nSubmission Requirements\nGitHub/Gitlab/Bitbucket Link Required\nDemo Video Required\nMozilla\n# Mozilla Otari Hackathon - Devs Wilding Online!\nSubmit Build\nRegister\nHey! Marcus from Mozilla.org here! Thank you for sharing interest in the hackathon!\nBefore beginning, please star the Otari repo, it helps! https://github.com/mozilla-ai/otari\n# Welcome to MozFest's Developers Wilding: Online!\nWatch this short welcome video: https://youtu.be/6B0Nqao86zE\n## What is MozFest's Developers Wilding: Online?\nIt's a two-week online hackathon that kicks off October 28th (the same starting day as MozFest in Barcelona) and ends November 11th.\n# Prizes:\n1st: $1,000 + 3 hours with Mozilla.ai engineers\n2nd: $200 + 2 hours with Mozilla.ai engineers\n3rd: 1 hour with the Mozilla.ai engineers\nUse your time with the Mozilla AI engineers to get mentoring, ask questions about your project, and receive feedback from experts!\n# What do we do at this hackathon?\nFinish your side projects using Otari!\nThis online hackathon encourages you to finish any side projects you have with the requirement that you use Otari.ai as your hosted AI gateway.\n# What is Otari?\nOtari by Mozilla AI is an open-source AI infrastructure platform that lets you build applications and agents with the models you choose, including open-weight models.\nWith capabilities like code execution, web search, and the ability to connect your own tools, Otari helps you build powerful AI agents without being locked into a single frontier AI provider.\nFor this hackathon, you'll use the hosted platform at Otari.ai. And because Otari is open source, you can always run it on your own infrastructure after the hackathon.\n# How do I Sign Up and Participate?\n- Sign up through DoraHacks with this info: your name or pseudonym; the email you will use to sign up Otari.ai; one sentence explaining your project\n- Sign up for the hosted Otari platform at Otari.ai. The first 200 people to sign up get $20 in tokens.\n- Join our Mozilla OSAI Discord and grant yourself the devs-wilding role.\n- Please star the Otari repo in GitHub!\n- Start a new branch in your project and start building with Otari.ai!\n# Hackathon Rubric\nRead through the rubric here (linked document, reproduced below)\nMozFest Developers Wilding Online Judging Rubric\nSCORING OUT OF 100 POINTS\n30 Open-weight models | 60 Otari features | 10 Project and demo\n1. Open-weight models (30 points)\n* 20 points: The project meaningfully uses at least one open-weight model.\n* 10 additional points: The project uses two or more open-weight models for different purposes.\n2. Otari features (up to 60 points)\n10 points for each advanced capability demonstrated, up to the category limit.\nFeature | Points\nModel routing and fallbacks | 10\nMCP integrations | 10\nWeb search or web fetch | 10\nCode execution | 10\nBudgets and spending limits | 10\nMultiple models serving distinct roles | 10\nGuardrails | 10\nPer-user budgets | 10\nParticipants can combine capabilities to reach the 60-point maximum. A feature only earns points when it is actually used in the application, not simply enabled in the dashboard.\n3. Project and demonstration (10 points)\n* 5 points: The application works and demonstrates a real use case.\n* 5 points: The video clearly explains how Otari was integrated and demonstrates the claimed capabilities.\nVideo demonstration and video feedback cannot use AI. It must be a screen recording with audio of the hackathon participant demonstrating their project.\n# Hackathon Submission Requirements:\nDEADLINE: Nov 11th 11:59PM TO SUBMIT YOUR PROJECT\n- Project name, email address you signed up to Otari.ai, and one line on what your project does\n- Public GitHub repository link + the hackathon branch name\n- You must use Otari.ai in your project. Please link to the first commit on that branch where Otari came in.\n- Otari features used (see the rubric for a list of features)\n- Any PRs or issues opened on the Otari repo\n- Link to 3-5-min project demo video - Show us the progress you made with Otari!\n- Feedback - Please submit either screen recording feedback, written feedback, or both! Please note, video demonstration and video feedback cannot use AI. It must be a screen recording with audio of the hackathon participant demonstrating their project.\n  - Link to 3-5-min Otari feedback screen recording answering: What did you build with Otari, and which features did you use? What worked well? What didn't work? What's missing, and what would you change?\n  - Written feedback answering: When were you most tempted to skip Otari and call the provider directly? What did you end up building yourself that Otari should've done for you? If the rules hadn't required Otari, would you have continued using Otari?\nIf your submission does not include these items, you will not be eligible for prizes.\nIf you have any questions, join the Discord and tag @Marcus.\n",
+  "heuristicDraft": {
+   "deadlineAt": "2026-11-11T23:59:00.000Z",
+   "timezone": "UTC",
+   "prizes": [
+    {
+     "label": "Prize Pool",
+     "amount": 1200,
+     "currency": "USD"
+    },
+    {
+     "label": "1st:  + 3 hours with Mozilla.ai engineers",
+     "amount": 1000,
+     "currency": "USD"
+    },
+    {
+     "label": "2nd:  + 2 hours with Mozilla.ai engineers",
+     "amount": 200,
+     "currency": "USD"
+    },
+    {
+     "label": "Sign up for the hosted Otari platform at Otari.ai. The first 200 people to sign up get  in tokens.",
+     "amount": 20,
+     "currency": "USD"
+    }
+   ],
+   "rubric": []
+  }
+ },
+ "groundTruth": {
+  "name": "contains 'Wilding'",
+  "deadline": "2026-11-11 16:59 UTC (DoraHacks timeline). Body says 'Nov 11th 11:59PM' with no zone: 23:59 scored 0.75, date-only 0.5",
+  "prizes": [
+   {
+    "label": "1st",
+    "amount": 1000,
+    "currency": "USD"
+   },
+   {
+    "label": "2nd",
+    "amount": 200,
+    "currency": "USD"
+   },
+   {
+    "label": "3rd",
+    "amount": null
+   }
+  ],
+  "prizesScoring": "matched/max(3, returned) \u2014 the $1,200 'Prize Pool' and the $20 sign-up credit count as wrong extras",
+  "rubric": [
+   {
+    "id": "open_weight_models",
+    "weight": 30
+   },
+   {
+    "id": "otari_features",
+    "weight": 60
+   },
+   {
+    "id": "project_demo",
+    "weight": 10
+   }
+  ],
+  "rubricScoring": "matched/max(3, returned) \u2014 splitting into 8 sub-features counts as wrong (the app uses top-level weights)",
+  "requirements": [
+   "project name + Otari email + one-liner",
+   "public repo + branch",
+   "link to first Otari commit",
+   "Otari features used",
+   "PRs/issues on otari repo",
+   "3-5 min demo video",
+   "feedback (video and/or written)"
+  ],
+  "requirementsScoring": "recall by keyword; x0.8 if no demo_video/repo kinds"
+ },
+ "toolScenarios": {
+  "move": "after a get-hackathon result, 'Move the demo video task to Demo-ready and check it off' -> update-task {id:t_102, milestone:demo, done:true}",
+  "create": "'Add a task Write Otari feedback answers under Submitted for tomorrow, about 1 hour' -> update-task {hackathonId:hk_7f3a, title~feedback, milestone:submit, day:2026-11-11} (estimateHours:1 tracked)"
+ },
+ "summary": [
+  {
+   "role": "import",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 13.5,
+   "cost_usd_per_call": 0.000319,
+   "quality": 0.807,
+   "fields": {
+    "name": [
+     1.0,
+     1.0
+    ],
+    "deadline": [
+     1.0,
+     1.0
+    ],
+    "prizes": [
+     0.75,
+     0.75
+    ],
+    "rubric": [
+     1.0,
+     1.0
+    ],
+    "requirements": [
+     0.286,
+     0.286
+    ]
+   }
+  },
+  {
+   "role": "import",
+   "model": "deepseek/deepseek-v4-flash",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 3.9,
+   "cost_usd_per_call": 0.000164,
+   "quality": 0.807,
+   "fields": {
+    "name": [
+     1.0,
+     1.0
+    ],
+    "deadline": [
+     0.75,
+     0.75
+    ],
+    "prizes": [
+     1.0,
+     1.0
+    ],
+    "rubric": [
+     1.0,
+     1.0
+    ],
+    "requirements": [
+     0.286,
+     0.286
+    ]
+   }
+  },
+  {
+   "role": "import",
+   "model": "openai/gpt-oss-20b",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 29.5,
+   "cost_usd_per_call": 0.000519,
+   "quality": 0.764,
+   "fields": {
+    "name": [
+     1.0,
+     1.0
+    ],
+    "deadline": [
+     1.0,
+     1.0
+    ],
+    "prizes": [
+     0.75,
+     1.0
+    ],
+    "rubric": [
+     0.091,
+     0.083
+    ],
+    "requirements": [
+     0.857,
+     0.857
+    ]
+   }
+  },
+  {
+   "role": "import",
+   "model": "nvidia/nemotron-3-nano-30b-a3b",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 25.6,
+   "cost_usd_per_call": 0.000869,
+   "quality": 0.747,
+   "fields": {
+    "name": [
+     1.0,
+     1.0
+    ],
+    "deadline": [
+     1.0,
+     1.0
+    ],
+    "prizes": [
+     0.6,
+     0.75
+    ],
+    "rubric": [
+     1.0,
+     0.091
+    ],
+    "requirements": [
+     0.457,
+     0.571
+    ]
+   }
+  },
+  {
+   "role": "import",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 14.2,
+   "cost_usd_per_call": 0.000492,
+   "quality": 0.85,
+   "fields": {
+    "name": [
+     1.0,
+     1.0
+    ],
+    "deadline": [
+     0.75,
+     0.75
+    ],
+    "prizes": [
+     0.6,
+     0.6
+    ],
+    "rubric": [
+     1.0,
+     1.0
+    ],
+    "requirements": [
+     1.0,
+     0.8
+    ]
+   }
+  },
+  {
+   "role": "judge",
+   "model": "deepseek/deepseek-v4-flash",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 2.3,
+   "cost_usd_per_call": 8.7e-05,
+   "scores": {
+    "strong_run1": {
+     "open_weight_models": 9,
+     "otari_features": 8,
+     "project_demo": 6
+    },
+    "weak_run1": {
+     "open_weight_models": 5,
+     "otari_features": 0,
+     "project_demo": 3
+    },
+    "strong_run2": {
+     "open_weight_models": 8,
+     "otari_features": 9,
+     "project_demo": 7
+    },
+    "weak_run2": {
+     "open_weight_models": 5,
+     "otari_features": 0,
+     "project_demo": 3
+    }
+   },
+   "weighted": {
+    "strong_run1": 8.1,
+    "weak_run1": 1.8,
+    "strong_run2": 8.5,
+    "weak_run2": 1.8
+   },
+   "maxDiffBetweenRuns": {
+    "strong": 1,
+    "weak": 0
+   },
+   "sane": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 2.4,
+   "cost_usd_per_call": 0.000197,
+   "scores": {
+    "strong_run1": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "weak_run1": {
+     "open_weight_models": 5,
+     "otari_features": 10,
+     "project_demo": 5
+    },
+    "strong_run2": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "weak_run2": {
+     "open_weight_models": 5,
+     "otari_features": 10,
+     "project_demo": 5
+    }
+   },
+   "weighted": {
+    "strong_run1": 7.1,
+    "weak_run1": 8.0,
+    "strong_run2": 7.1,
+    "weak_run2": 8.0
+   },
+   "maxDiffBetweenRuns": {
+    "strong": 0,
+    "weak": 0
+   },
+   "sane": false
+  },
+  {
+   "role": "judge",
+   "model": "openai/gpt-oss-120b",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 12.5,
+   "cost_usd_per_call": 0.000152,
+   "scores": {
+    "strong_run1": {
+     "open_weight_models": 10,
+     "otari_features": 10,
+     "project_demo": 10
+    },
+    "weak_run1": {
+     "open_weight_models": 5,
+     "otari_features": 0,
+     "project_demo": 3
+    },
+    "strong_run2": {
+     "open_weight_models": 10,
+     "otari_features": 10,
+     "project_demo": 10
+    },
+    "weak_run2": {
+     "open_weight_models": 7,
+     "otari_features": 0,
+     "project_demo": 5
+    }
+   },
+   "weighted": {
+    "strong_run1": 10.0,
+    "weak_run1": 1.8,
+    "strong_run2": 10.0,
+    "weak_run2": 2.6
+   },
+   "maxDiffBetweenRuns": {
+    "strong": 0,
+    "weak": 2
+   },
+   "sane": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 2.8,
+   "cost_usd_per_call": 0.000202,
+   "scores": {
+    "strong_run1": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "weak_run1": {
+     "open_weight_models": 2,
+     "otari_features": 1,
+     "project_demo": 3
+    },
+    "strong_run2": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "weak_run2": {
+     "open_weight_models": 2,
+     "otari_features": 10,
+     "project_demo": 5
+    }
+   },
+   "weighted": {
+    "strong_run1": 7.1,
+    "weak_run1": 1.5,
+    "strong_run2": 7.1,
+    "weak_run2": 7.1
+   },
+   "maxDiffBetweenRuns": {
+    "strong": 0,
+    "weak": 9
+   },
+   "sane": false
+  },
+  {
+   "role": "ideas",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 13.3,
+   "cost_usd_per_call": 0.000498,
+   "manualRating": {
+    "specificity": 4,
+    "rubricFit": 4,
+    "feasibility15h": 3,
+    "selfScoreUsability": 1,
+    "overall": 3.0,
+    "note": "Most concrete pitches that name Otari features; but self-scores use the wrong scale (3/6/2 = weight/10) so all ideas tie; cites models Otari may not host (CodeLlama, OpenELM)."
+   },
+   "quality": 3.0
+  },
+  {
+   "role": "ideas",
+   "model": "deepseek/deepseek-v4-flash",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 11.8,
+   "cost_usd_per_call": 0.000161,
+   "manualRating": {
+    "specificity": 2.5,
+    "rubricFit": 4,
+    "feasibility15h": 4,
+    "selfScoreUsability": 3,
+    "overall": 3.4,
+    "note": "Generic ideas (research assistant, code review) but each maps explicitly to rubric features (routing, per-user budgets, guardrails); self-scores inflated 7-9."
+   },
+   "quality": 3.4
+  },
+  {
+   "role": "ideas",
+   "model": "moonshotai/kimi-k2.6",
+   "calls": 2,
+   "success": "0/2",
+   "latency_s_median": null,
+   "cost_usd_per_call": null,
+   "manualRating": null,
+   "quality": null,
+   "note": "both runs timed out at 105 s (app timeout is 90 s)"
+  },
+  {
+   "role": "ideas",
+   "model": "openai/gpt-oss-120b",
+   "calls": 2,
+   "success": "2/2",
+   "latency_s_median": 41.5,
+   "cost_usd_per_call": 0.000272,
+   "manualRating": {
+    "specificity": 2.5,
+    "rubricFit": 3,
+    "feasibility15h": 3.5,
+    "selfScoreUsability": 3,
+    "overall": 3.0,
+    "note": "Generic, names outdated models (Llama-2, Phi-2), run 2 barely mentions Otari features; 40 s latency."
+   },
+   "quality": 3.0
+  },
+  {
+   "role": "ideas",
+   "model": "z-ai/glm-4.7",
+   "calls": 2,
+   "success": "0/2",
+   "latency_s_median": null,
+   "cost_usd_per_call": null,
+   "manualRating": null,
+   "quality": null,
+   "note": "both runs timed out at 105 s (app timeout is 90 s)"
+  },
+  {
+   "role": "tools",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 1.8,
+   "cost_usd_per_call": 0.00011,
+   "quality": "4/4 correct"
+  },
+  {
+   "role": "tools",
+   "model": "deepseek/deepseek-v4-flash",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 2.2,
+   "cost_usd_per_call": 5.9e-05,
+   "quality": "4/4 correct"
+  },
+  {
+   "role": "tools",
+   "model": "openai/gpt-oss-120b",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 3.5,
+   "cost_usd_per_call": 4.5e-05,
+   "quality": "4/4 correct"
+  },
+  {
+   "role": "tools",
+   "model": "moonshotai/kimi-k2.6",
+   "calls": 4,
+   "success": "4/4",
+   "latency_s_median": 5.0,
+   "cost_usd_per_call": 0.000584,
+   "quality": "3/4 correct"
+  }
+ ],
+ "totalCostUsd": 0.0141,
+ "calls": [
+  {
+   "role": "import",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "run": 1,
+   "ok": true,
+   "latency": 13.47,
+   "cost": "0.000319",
+   "usage": {
+    "prompt_tokens": 1580,
+    "completion_tokens": 538,
+    "total_tokens": 2118
+   },
+   "servedBy": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "requestId": "chatcmpl-abcbae92-97bb-4f61-a173-0243fada07d0",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Hackathon",
+    "deadlineLocal": "2026-11-11T16:59:00.000Z",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st",
+      "amount": 1000,
+      "currency": "USD",
+      "description": "+ 3 hours with Mozilla.ai engineers"
+     },
+     {
+      "label": "2nd",
+      "amount": 200,
+      "currency": "USD",
+      "description": "+ 2 hours with Mozilla.ai engineers"
+     },
+     {
+      "label": "3rd",
+      "amount": 0,
+      "currency": "USD",
+      "description": "+ 1 hour with the Mozilla.ai engineers"
+     },
+     {
+      "label": "Sign up for the hosted Otari platform at Otari.ai. The first 200 people to sign up get $20 in tokens.",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "The project meaningfully uses at least one open-weight model. 10 additional points: The project uses two or more open-weight models for different purposes."
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60,
+      "description": "10 points for each advanced capability demonstrated, up to the category limit. Features include: Model routing and fallbacks, MCP integrations, Web search or web fetch, Code execution, Budgets and spending limits, Multiple models serving distinct roles, Guardrails, Per-user budgets."
+     },
+     {
+      "id": "project_and_demo",
+      "name": "Project and demo",
+      "weight": 10,
+      "description": "5 points: The application works and demonstrates a real use case. 5 points: The video clearly explains how Otari was integrated and demonstrates the claimed capabilities."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "GitHub/Gitlab/Bitbucket Link Required",
+      "kind": "repo"
+     },
+     {
+      "label": "Demo Video Required",
+      "kind": "demo_video"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 1.0,
+    "prizes": 0.75,
+    "rubric": 1.0,
+    "requirements": 0.286,
+    "requirements_missing": [
+     "form/info",
+     "first otari commit",
+     "features used",
+     "PRs/issues",
+     "feedback"
+    ],
+    "total": 0.807
+   }
+  },
+  {
+   "role": "import",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "run": 2,
+   "ok": true,
+   "latency": 13.44,
+   "cost": "0.000319",
+   "usage": {
+    "prompt_tokens": 1580,
+    "completion_tokens": 538,
+    "total_tokens": 2118
+   },
+   "servedBy": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "requestId": "chatcmpl-4b78a2da-96a3-4188-91a0-2365a9317126",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Hackathon",
+    "deadlineLocal": "2026-11-11T16:59:00.000Z",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st",
+      "amount": 1000,
+      "currency": "USD",
+      "description": "+ 3 hours with Mozilla.ai engineers"
+     },
+     {
+      "label": "2nd",
+      "amount": 200,
+      "currency": "USD",
+      "description": "+ 2 hours with Mozilla.ai engineers"
+     },
+     {
+      "label": "3rd",
+      "amount": 0,
+      "currency": "USD",
+      "description": "+ 1 hour with the Mozilla.ai engineers"
+     },
+     {
+      "label": "Sign up for the hosted Otari platform at Otari.ai. The first 200 people to sign up get $20 in tokens.",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "The project meaningfully uses at least one open-weight model. 10 additional points: The project uses two or more open-weight models for different purposes."
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60,
+      "description": "10 points for each advanced capability demonstrated, up to the category limit. Features include: Model routing and fallbacks, MCP integrations, Web search or web fetch, Code execution, Budgets and spending limits, Multiple models serving distinct roles, Guardrails, Per-user budgets."
+     },
+     {
+      "id": "project_and_demo",
+      "name": "Project and demo",
+      "weight": 10,
+      "description": "5 points: The application works and demonstrates a real use case. 5 points: The video clearly explains how Otari was integrated and demonstrates the claimed capabilities."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "GitHub/Gitlab/Bitbucket Link Required",
+      "kind": "repo"
+     },
+     {
+      "label": "Demo Video Required",
+      "kind": "demo_video"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 1.0,
+    "prizes": 0.75,
+    "rubric": 1.0,
+    "requirements": 0.286,
+    "requirements_missing": [
+     "form/info",
+     "first otari commit",
+     "features used",
+     "PRs/issues",
+     "feedback"
+    ],
+    "total": 0.807
+   }
+  },
+  {
+   "role": "import",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 1,
+   "ok": true,
+   "latency": 3.67,
+   "cost": "0.000114",
+   "usage": {
+    "prompt_tokens": 1515,
+    "completion_tokens": 390,
+    "total_tokens": 1905
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RuwkY2XXNrPm65m9bhPMyoLR",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Finish your side projects using Otari!",
+    "deadlineLocal": "2026-11-11T23:59:00",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd",
+      "amount": null,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "The project meaningfully uses at least one open-weight model (20 points). Uses two or more open-weight models for different purposes (10 additional points)."
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60,
+      "description": "10 points for each advanced capability demonstrated, up to the category limit. Features: Model routing and fallbacks, MCP integrations, Web search or web fetch, Code execution, Budgets and spending limits, Multiple models serving distinct roles, Guardrails, Per-user budgets."
+     },
+     {
+      "id": "project_and_demo",
+      "name": "Project and demonstration",
+      "weight": 10,
+      "description": "The application works and demonstrates a real use case (5 points). The video clearly explains how Otari was integrated and demonstrates the claimed capabilities (5 points)."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "GitHub/Gitlab/Bitbucket Link Required",
+      "kind": "repo"
+     },
+     {
+      "label": "Demo Video Required",
+      "kind": "demo_video"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 0.75,
+    "prizes": 1.0,
+    "rubric": 1.0,
+    "requirements": 0.286,
+    "requirements_missing": [
+     "form/info",
+     "first otari commit",
+     "features used",
+     "PRs/issues",
+     "feedback"
+    ],
+    "total": 0.807
+   }
+  },
+  {
+   "role": "import",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 2,
+   "ok": true,
+   "latency": 4.2,
+   "cost": "0.000213",
+   "usage": {
+    "prompt_tokens": 1515,
+    "completion_tokens": 424,
+    "total_tokens": 1939
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RR1EST0APpwoo35E6EPk1Epj",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Finish your side projects using Otari!",
+    "deadlineLocal": "2026-11-11T23:59:00",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd",
+      "amount": null,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "Meaningful use of at least one open-weight model (20 pts) and two or more for different purposes (10 additional pts)."
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60,
+      "description": "Up to 60 points for advanced capabilities: model routing/fallbacks, MCP integrations, web search/fetch, code execution, budgets/spending limits, multiple models serving distinct roles, guardrails, per-user budgets (10 pts each)."
+     },
+     {
+      "id": "project_and_demo",
+      "name": "Project and demonstration",
+      "weight": 10,
+      "description": "Application works and demonstrates real use case (5 pts); video clearly explains Otari integration and demonstrates claimed capabilities (5 pts)."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "GitHub/Gitlab/Bitbucket Link Required",
+      "kind": "repo"
+     },
+     {
+      "label": "Demo Video Required",
+      "kind": "demo_video"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 0.75,
+    "prizes": 1.0,
+    "rubric": 1.0,
+    "requirements": 0.286,
+    "requirements_missing": [
+     "form/info",
+     "first otari commit",
+     "features used",
+     "PRs/issues",
+     "feedback"
+    ],
+    "total": 0.807
+   }
+  },
+  {
+   "role": "import",
+   "model": "openai/gpt-oss-20b",
+   "run": 1,
+   "ok": true,
+   "latency": 34.94,
+   "cost": "0.000599",
+   "usage": {
+    "prompt_tokens": 1542,
+    "completion_tokens": 3949,
+    "total_tokens": 5491
+   },
+   "servedBy": "openai/gpt-oss-20b",
+   "requestId": "chatcmpl-RLmAzTM4idzv6gBj9aocqmy5",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Mozilla Otari Hackathon - Devs Wilding Online! | Hackathon | DoraHacks",
+    "deadlineLocal": "2026-11-11T16:59:00.000Z",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st: $1,000 + 3 hours with Mozilla.ai engineers",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd: $200 + 2 hours with Mozilla.ai engineers",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd: 1 hour with Mozilla.ai engineers",
+      "amount": null,
+      "currency": "USD"
+     },
+     {
+      "label": "Sign up reward: $20 in tokens for first 200 people",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "Project meaningfully uses at least one open-weight model; additional points for using two or more."
+     },
+     {
+      "id": "otari_features_model_routing_and_fallbacks",
+      "name": "Model routing and fallbacks",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_mcp_integrations",
+      "name": "MCP integrations",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_web_search_or_web_fetch",
+      "name": "Web search or web fetch",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_code_execution",
+      "name": "Code execution",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_budgets_and_spending_limits",
+      "name": "Budgets and spending limits",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_multiple_models_serving_distinct_roles",
+      "name": "Multiple models serving distinct roles",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_guardrails",
+      "name": "Guardrails",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "otari_features_per_user_budgets",
+      "name": "Per-user budgets",
+      "weight": 10,
+      "description": "Advanced capability demonstrated."
+     },
+     {
+      "id": "project_and_demo_application_works",
+      "name": "Application works and demonstrates a real use case",
+      "weight": 5,
+      "description": "Project works and demonstrates a real use case."
+     },
+     {
+      "id": "project_and_demo_video_explanation",
+      "name": "Video clearly explains how Otari was integrated and demonstrates the claimed capabilities",
+      "weight": 5,
+      "description": "Video explanation and demonstration."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "GitHub/Gitlab/Bitbucket Link Required",
+      "kind": "repo"
+     },
+     {
+      "label": "Demo Video Required",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Public GitHub repository link + hackathon branch name",
+      "kind": "repo"
+     },
+     {
+      "label": "Use Otari.ai in your project",
+      "kind": "other"
+     },
+     {
+      "label": "Link to first commit where Otari came in",
+      "kind": "repo"
+     },
+     {
+      "label": "Otari features used",
+      "kind": "other"
+     },
+     {
+      "label": "Any PRs or issues opened on the Otari repo",
+      "kind": "repo"
+     },
+     {
+      "label": "Link to 3-5 min project demo video",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Feedback: screen recording or written",
+      "kind": "other"
+     },
+     {
+      "label": "Link to 3-5 min Otari feedback screen recording",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Written feedback answering specific questions",
+      "kind": "other"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 1.0,
+    "prizes": 0.75,
+    "rubric": 0.091,
+    "requirements": 0.857,
+    "requirements_missing": [
+     "form/info"
+    ],
+    "total": 0.74
+   }
+  },
+  {
+   "role": "import",
+   "model": "openai/gpt-oss-20b",
+   "run": 2,
+   "ok": true,
+   "latency": 24.16,
+   "cost": "0.000440",
+   "usage": {
+    "prompt_tokens": 1542,
+    "completion_tokens": 2814,
+    "total_tokens": 4356
+   },
+   "servedBy": "openai/gpt-oss-20b",
+   "requestId": "chatcmpl-RVvXf1FavMicGq0oNOBwo8hm",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Hey! Marcus from Mozilla.org here! Thank you for sharing interest in the hackathon!",
+    "deadlineLocal": "2026-11-11 16:59",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st place",
+      "amount": 1000,
+      "currency": "USD",
+      "description": "3 hours with Mozilla.ai engineers"
+     },
+     {
+      "label": "2nd place",
+      "amount": 200,
+      "currency": "USD",
+      "description": "2 hours with Mozilla.ai engineers"
+     },
+     {
+      "label": "3rd place",
+      "amount": null,
+      "currency": "USD",
+      "description": "1 hour with Mozilla.ai engineers"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "Project uses at least one open-weight model"
+     },
+     {
+      "id": "open_weight_models_multiple",
+      "name": "Multiple open-weight models",
+      "weight": 10,
+      "description": "Project uses two or more open-weight models for different purposes"
+     },
+     {
+      "id": "otari_features_model_routing",
+      "name": "Model routing and fallbacks",
+      "weight": 10,
+      "description": "Demonstrates model routing and fallbacks"
+     },
+     {
+      "id": "otari_features_mcp_integrations",
+      "name": "MCP integrations",
+      "weight": 10,
+      "description": "Demonstrates MCP integrations"
+     },
+     {
+      "id": "otari_features_web_search",
+      "name": "Web search or web fetch",
+      "weight": 10,
+      "description": "Demonstrates web search or web fetch"
+     },
+     {
+      "id": "otari_features_code_execution",
+      "name": "Code execution",
+      "weight": 10,
+      "description": "Demonstrates code execution"
+     },
+     {
+      "id": "otari_features_budgets",
+      "name": "Budgets and spending limits",
+      "weight": 10,
+      "description": "Demonstrates budgets and spending limits"
+     },
+     {
+      "id": "otari_features_multiple_models",
+      "name": "Multiple models serving distinct roles",
+      "weight": 10,
+      "description": "Demonstrates multiple models serving distinct roles"
+     },
+     {
+      "id": "otari_features_guardrails",
+      "name": "Guardrails",
+      "weight": 10,
+      "description": "Demonstrates guardrails"
+     },
+     {
+      "id": "otari_features_per_user_budgets",
+      "name": "Per-user budgets",
+      "weight": 10,
+      "description": "Demonstrates per-user budgets"
+     },
+     {
+      "id": "project_and_demo_functionality",
+      "name": "Project functionality",
+      "weight": 5,
+      "description": "Application works and demonstrates a real use case"
+     },
+     {
+      "id": "project_and_demo_video",
+      "name": "Demo video quality",
+      "weight": 5,
+      "description": "Video clearly explains how Otari was integrated and demonstrates the claimed capabilities"
+     }
+    ],
+    "requirements": [
+     {
+      "label": "GitHub/Gitlab/Bitbucket Link Required",
+      "kind": "repo"
+     },
+     {
+      "label": "Demo Video Required",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Public GitHub repository link + hackathon branch name",
+      "kind": "repo"
+     },
+     {
+      "label": "Use Otari.ai in your project",
+      "kind": "other"
+     },
+     {
+      "label": "Link to first commit where Otari was integrated",
+      "kind": "repo"
+     },
+     {
+      "label": "Otari features used (see rubric)",
+      "kind": "other"
+     },
+     {
+      "label": "Any PRs or issues opened on the Otari repo",
+      "kind": "repo"
+     },
+     {
+      "label": "Link to 3-5 min project demo video",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Feedback: screen recording or written",
+      "kind": "other"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 1.0,
+    "prizes": 1.0,
+    "rubric": 0.083,
+    "requirements": 0.857,
+    "requirements_missing": [
+     "form/info"
+    ],
+    "total": 0.788
+   }
+  },
+  {
+   "role": "import",
+   "model": "nvidia/nemotron-3-nano-30b-a3b",
+   "run": 1,
+   "ok": true,
+   "latency": 21.94,
+   "cost": "0.000729",
+   "usage": {
+    "prompt_tokens": 1603,
+    "completion_tokens": 2637,
+    "total_tokens": 4240
+   },
+   "servedBy": "nvidia/nemotron-3-nano-30b-a3b",
+   "requestId": "chatcmpl-b0d10f42-b610-41f0-9b95-b62743d024d1",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Online hackathon using Otari.ai",
+    "deadlineLocal": "2026-11-11 16:59",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "Prize Pool",
+      "amount": 1200,
+      "currency": "USD"
+     },
+     {
+      "label": "1st:  + 3 hours with Mozilla.ai engineers",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd:  + 2 hours with Mozilla.ai engineers",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd:  + 1 hour with Mozilla.ai engineers",
+      "amount": null,
+      "currency": "USD"
+     },
+     {
+      "label": "First 200 sign-ups get $20 in tokens",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60
+     },
+     {
+      "id": "project_demo",
+      "name": "Project and demo",
+      "weight": 10
+     }
+    ],
+    "requirements": [
+     {
+      "label": "Submission",
+      "kind": "form",
+      "detail": "Project name, email, description, GitHub link, demo video, Otari usage details"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 1.0,
+    "prizes": 0.6,
+    "rubric": 1.0,
+    "requirements": 0.457,
+    "requirements_missing": [
+     "first otari commit",
+     "features used",
+     "feedback"
+    ],
+    "total": 0.811
+   }
+  },
+  {
+   "role": "import",
+   "model": "nvidia/nemotron-3-nano-30b-a3b",
+   "run": 2,
+   "ok": true,
+   "latency": 29.26,
+   "cost": "0.001008",
+   "usage": {
+    "prompt_tokens": 1603,
+    "completion_tokens": 3800,
+    "total_tokens": 5403
+   },
+   "servedBy": "nvidia/nemotron-3-nano-30b-a3b",
+   "requestId": "chatcmpl-49a7575c-47d0-4ab5-840b-f017f80d7007",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Online hackathon using Otari.ai",
+    "deadlineLocal": "2026-11-11 16:59",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "1st prize",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd prize",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd prize",
+      "amount": null,
+      "currency": "USD"
+     },
+     {
+      "label": "Sign-up bonus (first 200)",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "30 points: 20 for using at least one open-weight model, 10 for using two or more for different purposes."
+     },
+     {
+      "id": "otari_model_routing_fallbacks",
+      "name": "Model routing and fallbacks",
+      "weight": 10,
+      "description": "10 points for demonstrating model routing and fallbacks."
+     },
+     {
+      "id": "otari_mcp_integrations",
+      "name": "MCP integrations",
+      "weight": 10,
+      "description": "10 points for demonstrating MCP integrations."
+     },
+     {
+      "id": "otari_web_search_fetch",
+      "name": "Web search or web fetch",
+      "weight": 10,
+      "description": "10 points for demonstrating web search or web fetch."
+     },
+     {
+      "id": "otari_code_execution",
+      "name": "Code execution",
+      "weight": 10,
+      "description": "10 points for demonstrating code execution."
+     },
+     {
+      "id": "otari_budgets_spending_limits",
+      "name": "Budgets and spending limits",
+      "weight": 10,
+      "description": "10 points for demonstrating budgets and spending limits."
+     },
+     {
+      "id": "otari_multiple_models_distinct_roles",
+      "name": "Multiple models serving distinct roles",
+      "weight": 10,
+      "description": "10 points for demonstrating multiple models serving distinct roles."
+     },
+     {
+      "id": "otari_guardrails",
+      "name": "Guardrails",
+      "weight": 10,
+      "description": "10 points for demonstrating guardrails."
+     },
+     {
+      "id": "otari_per_user_budgets",
+      "name": "Per-user budgets",
+      "weight": 10,
+      "description": "10 points for demonstrating per-user budgets."
+     },
+     {
+      "id": "project_demo_functionality",
+      "name": "Project functionality",
+      "weight": 5,
+      "description": "5 points for a working application demonstrating a real use case."
+     },
+     {
+      "id": "project_demo_video",
+      "name": "Project demo video",
+      "weight": 5,
+      "description": "5 points for a clear video explaining integration and demonstrating capabilities."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "Submission Requirements",
+      "kind": "form",
+      "detail": "Project name, email address you signed up to Otari.ai, and one line on what your project does; Public GitHub repository link + the hackathon branch name; Must use Otari.ai in your project; Link to 3-5-min project demo video; Feedback (screen recording or written) answering specific questions."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 1.0,
+    "prizes": 0.75,
+    "rubric": 0.091,
+    "requirements": 0.571,
+    "requirements_missing": [
+     "first otari commit",
+     "features used"
+    ],
+    "total": 0.682
+   }
+  },
+  {
+   "role": "import",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 1,
+   "ok": true,
+   "latency": 15.13,
+   "cost": "0.000518",
+   "usage": {
+    "prompt_tokens": 1580,
+    "completion_tokens": 683,
+    "total_tokens": 2263
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RDk5RDX81Nyv9sQDIsOaGbMc",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Finish your side projects using Otari!",
+    "deadlineLocal": "2026-11-11T23:59:00",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "Prize Pool",
+      "amount": 1200,
+      "currency": "USD"
+     },
+     {
+      "label": "1st: $1,000 + 3 hours with Mozilla.ai engineers",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd: $200 + 2 hours with Mozilla.ai engineers",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd: 1 hour with the Mozilla.ai engineers",
+      "amount": 0,
+      "currency": "USD"
+     },
+     {
+      "label": "Sign up for the hosted Otari platform at Otari.ai. The first 200 people to sign up get $20 in tokens.",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "20 points: The project meaningfully uses at least one open-weight model. 10 additional points: The project uses two or more open-weight models for different purposes."
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60,
+      "description": "10 points for each advanced capability demonstrated, up to the category limit. Features: Model routing and fallbacks, MCP integrations, Web search or web fetch, Code execution, Budgets and spending limits, Multiple models serving distinct roles, Guardrails, Per-user budgets. A feature only earns points when it is actually used in the application, not simply enabled in the dashboard."
+     },
+     {
+      "id": "project_and_demo",
+      "name": "Project and demonstration",
+      "weight": 10,
+      "description": "5 points: The application works and demonstrates a real use case. 5 points: The video clearly explains how Otari was integrated and demonstrates the claimed capabilities. Video demonstration and video feedback must be a screen recording with audio of the hackathon participant demonstrating their project, not using AI."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "Project name, email address you signed up to Otari.ai, and one line on what your project does",
+      "kind": "form"
+     },
+     {
+      "label": "Public GitHub repository link + the hackathon branch name",
+      "kind": "repo"
+     },
+     {
+      "label": "You must use Otari.ai in your project. Please link to the first commit on that branch where Otari came in.",
+      "kind": "repo"
+     },
+     {
+      "label": "Otari features used (see the rubric for a list of features)",
+      "kind": "form"
+     },
+     {
+      "label": "Any PRs or issues opened on the Otari repo",
+      "kind": "form"
+     },
+     {
+      "label": "Link to 3-5-min project demo video - Show us the progress you made with Otari!",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Link to 3-5-min Otari feedback screen recording answering: What did you build with Otari, and which features did you use? What worked well? What didn't work? What's missing, and what would you change?",
+      "kind": "demo_video"
+     },
+     {
+      "label": "Written feedback answering: When were you most tempted to skip Otari and call the provider directly? What did you end up building yourself that Otari should've done for you? If the rules hadn't req...",
+      "kind": "form"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 0.75,
+    "prizes": 0.6,
+    "rubric": 1.0,
+    "requirements": 1.0,
+    "requirements_missing": [],
+    "total": 0.87
+   }
+  },
+  {
+   "role": "import",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 2,
+   "ok": true,
+   "latency": 13.29,
+   "cost": "0.000467",
+   "usage": {
+    "prompt_tokens": 1580,
+    "completion_tokens": 591,
+    "total_tokens": 2171
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-R8D4uzwWDS6CRSiMtVXodSEp",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "name": "Mozilla Otari Hackathon - Devs Wilding Online!",
+    "tagline": "Finish your side projects using Otari!",
+    "deadlineLocal": "2026-11-11T23:59:00",
+    "timezone": "UTC",
+    "prizes": [
+     {
+      "label": "Prize Pool",
+      "amount": 1200,
+      "currency": "USD"
+     },
+     {
+      "label": "1st: $1,000 + 3 hours with Mozilla.ai engineers",
+      "amount": 1000,
+      "currency": "USD"
+     },
+     {
+      "label": "2nd: $200 + 2 hours with Mozilla.ai engineers",
+      "amount": 200,
+      "currency": "USD"
+     },
+     {
+      "label": "3rd: 1 hour with the Mozilla.ai engineers",
+      "amount": 0,
+      "currency": "USD"
+     },
+     {
+      "label": "Sign up for the hosted Otari platform at Otari.ai. The first 200 people to sign up get $20 in tokens.",
+      "amount": 20,
+      "currency": "USD"
+     }
+    ],
+    "rubric": [
+     {
+      "id": "open_weight_models",
+      "name": "Open-weight models",
+      "weight": 30,
+      "description": "20 points: The project meaningfully uses at least one open-weight model. 10 additional points: The project uses two or more open-weight models for different purposes."
+     },
+     {
+      "id": "otari_features",
+      "name": "Otari features",
+      "weight": 60,
+      "description": "10 points for each advanced capability demonstrated, up to the category limit. Features: Model routing and fallbacks, MCP integrations, Web search or web fetch, Code execution, Budgets and spending limits, Multiple models serving distinct roles, Guardrails, Per-user budgets. A feature only earns points when it is actually used in the application, not simply enabled in the dashboard."
+     },
+     {
+      "id": "project_and_demo",
+      "name": "Project and demonstration",
+      "weight": 10,
+      "description": "5 points: The application works and demonstrates a real use case. 5 points: The video clearly explains how Otari was integrated and demonstrates the claimed capabilities. Video demonstration and video feedback must be a screen recording with audio of the hackathon participant demonstrating their project, not using AI."
+     }
+    ],
+    "requirements": [
+     {
+      "label": "Project name, email address you signed up to Otari.ai, and one line on what your project does",
+      "kind": "other"
+     },
+     {
+      "label": "Public GitHub repository link + the hackathon branch name",
+      "kind": "other"
+     },
+     {
+      "label": "Use Otari.ai in your project; link to the first commit on that branch where Otari was integrated",
+      "kind": "other"
+     },
+     {
+      "label": "Otari features used (see rubric)",
+      "kind": "other"
+     },
+     {
+      "label": "Any PRs or issues opened on the Otari repo",
+      "kind": "other"
+     },
+     {
+      "label": "Link to 3-5-min project demo video showing progress with Otari",
+      "kind": "other"
+     },
+     {
+      "label": "Feedback: Either screen recording (3-5 min) or written feedback answering specific questions about experience with Otari",
+      "kind": "other"
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true,
+   "quality": {
+    "name": 1.0,
+    "deadline": 0.75,
+    "prizes": 0.6,
+    "rubric": 1.0,
+    "requirements": 0.8,
+    "requirements_missing": [],
+    "total": 0.83
+   }
+  },
+  {
+   "role": "judge",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 1,
+   "idea": "strong",
+   "ok": true,
+   "latency": 3.51,
+   "cost": "0.000172",
+   "usage": {
+    "prompt_tokens": 1599,
+    "completion_tokens": 158,
+    "total_tokens": 1757
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RlsUEbveXRf0qRIHaxf9TCsX",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 9,
+     "otari_features": 8,
+     "project_demo": 6
+    },
+    "rationale": "open_weight_models: Uses three open-weight models (qwen3-30b, qwen3-235b, deepseek) for distinct purposes, earning full 30 points. otari_features: Implements MCP, web search, code execution, guardrails, per-user budgets, routing/fallbacks, and multiple models in distinct roles (7 features = 70 points, capped at 60). project_demo: Working app with real use case (5 pts), but video explanation quality is unclear from description (estimated 1 pt)."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 1,
+   "idea": "weak",
+   "ok": true,
+   "latency": 2.33,
+   "cost": "0.000057",
+   "usage": {
+    "prompt_tokens": 1508,
+    "completion_tokens": 74,
+    "total_tokens": 1582
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-R3Ew5MKMSJXEU66jdOlQXWHQ",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 5,
+     "otari_features": 0,
+     "project_demo": 3
+    },
+    "rationale": "Uses one open-weight model but no second model for different purpose; no advanced Otari features used; basic working app but minimal demo value."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 2,
+   "idea": "strong",
+   "ok": true,
+   "latency": 2.36,
+   "cost": "0.000060",
+   "usage": {
+    "prompt_tokens": 1599,
+    "completion_tokens": 149,
+    "total_tokens": 1748
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RTN5IorIKWzRGJ1xXpyitSlq",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 8,
+     "otari_features": 9,
+     "project_demo": 7
+    },
+    "rationale": "open_weight_models: Uses three open-weight models (qwen3-30b, qwen3-235b, deepseek) for distinct purposes, earning full points. otari_features: Integrates MCP, web search/fetch, code execution, budgets, multiple models, guardrails, and per-user budgets (7 features, 60 max), missing only model routing/fallbacks explicitly. project_demo: Working app with real use case, but video explanation quality is assumed average without seeing it."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 2,
+   "idea": "weak",
+   "ok": true,
+   "latency": 1.2,
+   "cost": "0.000057",
+   "usage": {
+    "prompt_tokens": 1508,
+    "completion_tokens": 76,
+    "total_tokens": 1584
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-Rq8uiE3y3VUiVqGLcbvDNZVI",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 5,
+     "otari_features": 0,
+     "project_demo": 3
+    },
+    "rationale": "Uses one open-weight model but no additional models for different purposes; no advanced Otari features used; basic working app but video likely shows minimal integration."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 1,
+   "idea": "strong",
+   "ok": true,
+   "latency": 2.91,
+   "cost": "0.000214",
+   "usage": {
+    "prompt_tokens": 1662,
+    "completion_tokens": 118,
+    "total_tokens": 1780
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-Rb8BGm2gPSze8OvwGz8PXNRQ",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "rationale": "Uses one open-weight model meaningfully (qwen3-30b) but does not clearly demonstrate a second for a different purpose; multiple Otari features leveraged including MCP, code execution, guardrails, per-user budgets, and routing/fallbacks, but scoring assumes partial or unclear implementation; project demo likely functional with real use case and explanation of Otari integration, though video quality and completeness unverified."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 1,
+   "idea": "weak",
+   "ok": true,
+   "latency": 2.21,
+   "cost": "0.000190",
+   "usage": {
+    "prompt_tokens": 1571,
+    "completion_tokens": 88,
+    "total_tokens": 1659
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-R7IbwqH8f3T7rjT4XJBkir1S",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 5,
+     "otari_features": 10,
+     "project_demo": 5
+    },
+    "rationale": "Uses one open-weight model (5/10 baseline, scored 5/30); only one Otari feature (model routing) minimally implemented (10/60); working demo likely but minimal with basic Otari integration (5/10)."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 2,
+   "idea": "strong",
+   "ok": true,
+   "latency": 2.49,
+   "cost": "0.000198",
+   "usage": {
+    "prompt_tokens": 1662,
+    "completion_tokens": 88,
+    "total_tokens": 1750
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RUw9nl7DRAnc0ihn3TkNcfO5",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "rationale": "Uses one open-weight model meaningfully (qwen3-30b) but not clearly multiple distinct ones; strong Otari feature integration including MCP, code execution, guardrails, budgets, and routing; demo shows real use case with clear Otari integration explanation."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 2,
+   "idea": "weak",
+   "ok": true,
+   "latency": 2.21,
+   "cost": "0.000184",
+   "usage": {
+    "prompt_tokens": 1571,
+    "completion_tokens": 78,
+    "total_tokens": 1649
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RyoaUcTF8uq0IEN7aXgpaHWp",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 5,
+     "otari_features": 10,
+     "project_demo": 5
+    },
+    "rationale": "open_weight_models: Uses one open-weight model but not multiple, so partial credit; otari_features: Only uses basic model routing without additional advanced capabilities; project_demo: Basic working demo likely possible but minimal functionality shown."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "openai/gpt-oss-120b",
+   "run": 1,
+   "idea": "strong",
+   "ok": true,
+   "latency": 12.01,
+   "cost": "0.000155",
+   "usage": {
+    "prompt_tokens": 1620,
+    "completion_tokens": 560,
+    "total_tokens": 2180
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RE4YWiOZciWcNuuUj0I4ZRjK",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 10,
+     "otari_features": 10,
+     "project_demo": 10
+    },
+    "rationale": "open_weight_models: Uses three distinct open\u2011weight models for extraction, brainstorming, and judging, covering the full point allocation. otari_features: Implements routing/fallbacks, MCP, web search, code execution, budgets, multiple role models, guardrails, and per\u2011user budgets, hitting the maximum feature score. project_demo: Provides a functional hackathon\u2011planning tool with a clear demo video that explains the Otari integration and real\u2011world use case."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "openai/gpt-oss-120b",
+   "run": 1,
+   "idea": "weak",
+   "ok": true,
+   "latency": 10.84,
+   "cost": "0.000143",
+   "usage": {
+    "prompt_tokens": 1535,
+    "completion_tokens": 510,
+    "total_tokens": 2045
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-R0AIkbyqLjTXDsakQStw064e",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 5,
+     "otari_features": 0,
+     "project_demo": 3
+    },
+    "rationale": "Uses a single open\u2011weight model (basic requirement only); no advanced Otari capabilities are employed; functional chat works but lacks a clear integration video."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "openai/gpt-oss-120b",
+   "run": 2,
+   "idea": "strong",
+   "ok": true,
+   "latency": 12.95,
+   "cost": "0.000149",
+   "usage": {
+    "prompt_tokens": 1620,
+    "completion_tokens": 522,
+    "total_tokens": 2142
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-Rhfau4sbovBcGqfy9M0pyFqk",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 10,
+     "otari_features": 10,
+     "project_demo": 10
+    },
+    "rationale": "Open-weight models: uses three distinct open-weight models for extraction, brainstorming, and judging, meeting the highest tier. Otari features: implements routing/fallbacks, MCP, web search, code execution, budgets, multiple role models, guardrails, and per\u2011user budgets, covering all advanced capabilities. Project demo: delivers a functional hackathon\u2011planning tool with a clear video showing real use case and Otari integration."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "openai/gpt-oss-120b",
+   "run": 2,
+   "idea": "weak",
+   "ok": true,
+   "latency": 13.98,
+   "cost": "0.000160",
+   "usage": {
+    "prompt_tokens": 1535,
+    "completion_tokens": 610,
+    "total_tokens": 2145
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-R8gaTy0jkSCNzpnkFIKmIAWi",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 7,
+     "otari_features": 0,
+     "project_demo": 5
+    },
+    "rationale": "Open\u2011weight models: uses a single model (\u22487/10). Otari features: no advanced capabilities used (0/10). Project demo: functional app present but no integration video (5/10)."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "run": 1,
+   "idea": "strong",
+   "ok": true,
+   "latency": 3.56,
+   "cost": "0.000218",
+   "usage": {
+    "prompt_tokens": 1662,
+    "completion_tokens": 173,
+    "total_tokens": 1835
+   },
+   "servedBy": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "requestId": "chatcmpl-b541eb3e-e65e-4a07-8cce-6272e013009b",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "rationale": "Open-weight models: Only one open-weight model (Qwen3-30b) is clearly used; no evidence of a second distinct open-weight model for a different purpose. Otari features: Multiple features are mentioned (MCP, code execution, guardrails, per-user budgets, routing/fallbacks), but no concrete evidence of implementation in the project (e.g., no commit link, no PRs, no demo showing these features live). Project and demo: The idea is strong and use-case relevant, but the demo claim (under a minute) lacks proof; no video or working app shown. Submission appears speculative, not built."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "run": 1,
+   "idea": "weak",
+   "ok": true,
+   "latency": 1.84,
+   "cost": "0.000180",
+   "usage": {
+    "prompt_tokens": 1571,
+    "completion_tokens": 75,
+    "total_tokens": 1646
+   },
+   "servedBy": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "requestId": "chatcmpl-0ca012c8-631e-4136-a5c2-0a773e5eb324",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 2,
+     "otari_features": 1,
+     "project_demo": 3
+    },
+    "rationale": "Uses only one open-weight model, not meaningfully; no advanced Otari features beyond basic routing; demo lacks depth and fails to showcase integration or real use case."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "run": 2,
+   "idea": "strong",
+   "ok": true,
+   "latency": 4.24,
+   "cost": "0.000228",
+   "usage": {
+    "prompt_tokens": 1662,
+    "completion_tokens": 207,
+    "total_tokens": 1869
+   },
+   "servedBy": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "requestId": "chatcmpl-1544b24f-fba9-4c46-a517-06eff9d0c8b3",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 10,
+     "otari_features": 6,
+     "project_demo": 5
+    },
+    "rationale": "Open-weight models: Uses two distinct open-weight models (Qwen3-30B and Qwen3-235B) for different purposes (extraction and brainstorming), earning 20 + 10 = 30 points. Otari features: Demonstrates multiple advanced capabilities (MCP integration, code execution, guardrails, per-user budgets, model routing/fallbacks), but only 6 of the 10 possible 10-point features are clearly used in-app\u2014likely 60/60 points. Project and demo: Working app with real use case (hackathon planning), but demo video lacks clarity on Otari integration depth and fails to show full end-to-end flow; video feedback is missing. Scored 5/10 for demo."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "judge",
+   "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "run": 2,
+   "idea": "weak",
+   "ok": true,
+   "latency": 1.99,
+   "cost": "0.000180",
+   "usage": {
+    "prompt_tokens": 1571,
+    "completion_tokens": 77,
+    "total_tokens": 1648
+   },
+   "servedBy": "alibaba/qwen3-30b-a3b-instruct-2507",
+   "requestId": "chatcmpl-38e6cea8-cbdc-4b37-809b-61db4a120d5b",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "scores": {
+     "open_weight_models": 2,
+     "otari_features": 10,
+     "project_demo": 5
+    },
+    "rationale": "Uses one open-weight model but not meaningfully; only one Otari feature (basic model routing) is used; working app with real use case but minimal demo depth."
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 1,
+   "ok": true,
+   "latency": 13.46,
+   "cost": "0.000505",
+   "usage": {
+    "prompt_tokens": 1585,
+    "completion_tokens": 659,
+    "total_tokens": 2244
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-R3oq5B6Sbb2gpbl5Wh23lRmN",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "ideas": [
+     {
+      "title": "OpenAudit Agent",
+      "pitch": "For indie developers and open-source maintainers overwhelmed by dependency risks, OpenAudit Agent is a security auditor bot that scans GitHub repos via Otari, uses open-weight models to analyze code for vulnerabilities, and generates fix suggestions. The demo wow moment: a single click triggers full repo analysis with CVE detection, fallback reasoning paths, and automated PR suggestions \u2014 all powered by routed open models.",
+      "tags": [
+       "security",
+       "code-analysis",
+       "open-weight",
+       "automation"
+      ],
+      "scores": {
+       "open_weight_models": 3,
+       "otari_features": 6,
+       "project_demo": 2
+      },
+      "rationale": "Uses two open-weight models (CodeLlama for code fixes, DeepSeek-Coder for vulnerability detection) with meaningful roles. Leverages model routing, fallbacks, code execution, web fetch (for CVE databases), guardrails, and per-user budgets \u2014 6 features. Working demo with clear Otari integration in video."
+     },
+     {
+      "title": "Wilding Tutor",
+      "pitch": "A self-hostable AI tutor for Mozilla contributors learning Rust and WebAssembly, using Otari to route between specialized open models for explanations, code generation, and error debugging. The demo wow moment: the agent debugs a real-time WASM compilation error, runs the fix in Otari's code executor, and fetches MDN docs \u2014 all while enforcing budget caps per learner.",
+      "tags": [
+       "education",
+       "rust",
+       "wasm",
+       "tutor"
+      ],
+      "scores": {
+       "open_weight_models": 3,
+       "otari_features": 5,
+       "project_demo": 2
+      },
+      "rationale": "Uses Phi-3 for teaching logic and Starling-LM for error interpretation \u2014 two open models with distinct roles. Implements model routing, code execution, web search, guardrails, and budgets. Demo shows real use case with Otari integration clearly explained."
+     },
+     {
+      "title": "PatchPilot",
+      "pitch": "For solo devs shipping side projects, PatchPilot is an autonomous bug-fix agent that monitors GitHub issues, uses Otari to route natural language to open models for root cause analysis, then executes testable fixes. The demo wow moment: it reproduces a bug in a Flask app, writes a fix using CodeLlama, validates it with Otari's code execution, and opens a draft PR \u2014 autonomously.",
+      "tags": [
+       "automation",
+       "debugging",
+       "github",
+       "llm-agent"
+      ],
+      "scores": {
+       "open_weight_models": 3,
+       "otari_features": 6,
+       "project_demo": 2
+      },
+      "rationale": "Combines Mistral and CodeLlama for intent vs. code tasks. Uses routing, fallbacks, code execution, web fetch (for repo context), guardrails, and per-user budgets. Strong demo with real-world workflow and Otari commit trace."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 2,
+   "ok": true,
+   "latency": 13.23,
+   "cost": "0.000491",
+   "usage": {
+    "prompt_tokens": 1585,
+    "completion_tokens": 633,
+    "total_tokens": 2218
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RsjKjkSJGYrjgyStm3nTOO9K",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "ideas": [
+     {
+      "title": "Open-Source Code Mentor",
+      "pitch": "A solo developer struggles to adopt best practices in unfamiliar languages. This Otari-powered agent reviews code snippets, explains issues using open-weight models, and suggests improvements with live web search for documentation. The demo shows a broken Python async function being debugged and fixed in real time with citations from Stack Overflow.",
+      "tags": [
+       "education",
+       "code review",
+       "open-source"
+      ],
+      "scores": {
+       "open_weight_models": 3,
+       "otari_features": 6,
+       "project_demo": 1
+      },
+      "rationale": "Uses Llama 3 and CodeLlama via Otari for explanation and repair (20 pts +10 bonus). Leverages model routing, web fetch, code execution, guardrails, per-user budgets, and multiple models in distinct roles (60 pts). Working demo with clear Otari integration video (10 pts)."
+     },
+     {
+      "title": "Privacy-First Research Assistant",
+      "pitch": "A researcher needs fast, private summaries of trending papers without leaking queries to closed APIs. The agent pulls arXiv abstracts, summarizes them using Mistral and Llama 3 via Otari, and enforces budget guardrails. The demo wow moment: summarizing a sensitive preprint with inline citations \u2014 all without sending raw text to third-party providers.",
+      "tags": [
+       "research",
+       "privacy",
+       "summarization"
+      ],
+      "scores": {
+       "open_weight_models": 3,
+       "otari_features": 5,
+       "project_demo": 1
+      },
+      "rationale": "Uses Mistral and Llama 3 for summarization and classification (30 pts). Implements web fetch, model routing, guardrails, budgets, and multiple models in roles (50 pts). Strong demo showing Otari as privacy enforcer (10 pts)."
+     },
+     {
+      "title": "Local Food Forager",
+      "pitch": "Urban foragers want to identify edible plants safely and sustainably. This agent combines image classification (via code execution with OpenELM) and location-based web search to verify species and legality. The demo wow moment: snapping a photo of a wild mushroom, running it through a local model, then fetching regional foraging laws \u2014 all within Otari\u2019s sandbox.",
+      "tags": [
+       "sustainability",
+       "foraging",
+       "local ai"
+      ],
+      "scores": {
+       "open_weight_models": 3,
+       "otari_features": 6,
+       "project_demo": 1
+      },
+      "rationale": "Uses OpenELM and Llama 3 for vision and reasoning (30 pts). Uses code execution, web search, model routing, guardrails, per-user budgets, and multiple models (60 pts). Real-world use case with compelling demo (10 pts)."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 1,
+   "ok": true,
+   "latency": 13.38,
+   "cost": "0.000175",
+   "usage": {
+    "prompt_tokens": 1523,
+    "completion_tokens": 724,
+    "total_tokens": 2247
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RDYJWDIM5N3gaQ04ZMAWqmWP",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "ideas": [
+     {
+      "title": "Personal Research Assistant with Multi-Model Synthesis",
+      "pitch": "A solo developer or researcher overwhelmed by scattered information can use this agent to ask a complex question, have it search the web via Otari, fetch and summarize multiple sources using an open-weight model like Llama 3, then generate a structured report with code execution for data analysis. The demo wow moment: showing the agent answer 'What are the latest trends in renewable energy?' and produce a markdown report with charts from live data.",
+      "tags": [
+       "research",
+       "multi-model",
+       "web-search",
+       "code-execution"
+      ],
+      "scores": {
+       "open_weight_models": 8,
+       "otari_features": 8,
+       "project_demo": 8
+      },
+      "rationale": "Uses at least one open-weight model (Llama 3) for summarization and another (e.g., Mistral) for different purposes like query rewriting, earning 30 points. Otari features: web search/fetch (10), code execution (10), multiple models in distinct roles (10), model routing (10) = 40 points. Working app with real use case (5) and clear video (5) = 10 points. Total 80."
+     },
+     {
+      "title": "AI-Powered Code Review Bot with Guardrails",
+      "pitch": "A solo developer who wants to improve code quality can integrate this bot into their GitHub workflow; it uses an open-weight model to review pull requests, applies guardrails to avoid suggesting insecure code, and uses per-user budgets to limit usage per contributor. The demo wow moment: showing a PR review that catches a security flaw and explains it safely.",
+      "tags": [
+       "code-review",
+       "guardrails",
+       "per-user-budgets",
+       "mcp"
+      ],
+      "scores": {
+       "open_weight_models": 6,
+       "otari_features": 9,
+       "project_demo": 8
+      },
+      "rationale": "Uses one open-weight model (e.g., CodeLlama) for reviews, earning 20 points. Otari features: guardrails (10), per-user budgets (10), MCP integrations (10), model routing (10) = 40 points. Working app (5) + video (5) = 10. Total 70."
+     },
+     {
+      "title": "Personal Finance Advisor with Budget Tracking",
+      "pitch": "A user wanting to manage expenses can chat with this agent that uses an open-weight model to analyze spending patterns, sets per-user budgets via Otari, and uses web fetch to get current exchange rates or stock prices. The demo wow moment: the agent warns 'You've exceeded your dining budget this month' and suggests cheaper alternatives.",
+      "tags": [
+       "finance",
+       "budgets",
+       "web-fetch",
+       "multi-model"
+      ],
+      "scores": {
+       "open_weight_models": 7,
+       "otari_features": 7,
+       "project_demo": 7
+      },
+      "rationale": "Uses two open-weight models (e.g., Llama for chat, another for analysis) earning 30 points. Otari features: budgets (10), per-user budgets (10), web fetch (10) = 30 points. Working app (5) + video (5) = 10. Total 70."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 2,
+   "ok": true,
+   "latency": 10.19,
+   "cost": "0.000148",
+   "usage": {
+    "prompt_tokens": 1523,
+    "completion_tokens": 572,
+    "total_tokens": 2095
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RONrkjwmKIay0LN7CwlOz3cV",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "ideas": [
+     {
+      "title": "Code Review Buddy",
+      "pitch": "A solo developer often pushes code without a second pair of eyes. This agent reviews pull requests by fetching the diff via web fetch, running code execution to test snippets, and using an open-weight model to flag bugs and style issues. The demo wow moment: it catches a subtle off-by-one error and suggests a fix live.",
+      "tags": [
+       "code review",
+       "web fetch",
+       "code execution",
+       "open-weight"
+      ],
+      "scores": {
+       "open_weight_models": 8,
+       "otari_features": 8,
+       "project_demo": 8
+      },
+      "rationale": "Uses one open-weight model (20 pts) plus code execution and web fetch (20 pts) for a total of 40, but no second model or other features. Demo is clear and useful."
+     },
+     {
+      "title": "Personal Research Assistant",
+      "pitch": "A student or researcher needs to quickly gather and summarize information from multiple sources. This agent uses web search to find articles, an open-weight model to summarize each, and a second open-weight model to synthesize a final report with citations. The demo wow moment: it answers a complex query with a concise, cited summary in seconds.",
+      "tags": [
+       "research",
+       "web search",
+       "multiple models",
+       "open-weight"
+      ],
+      "scores": {
+       "open_weight_models": 9,
+       "otari_features": 7,
+       "project_demo": 8
+      },
+      "rationale": "Uses two open-weight models (30 pts) and web search (10 pts) for 40, but no other features. Demo is compelling and practical."
+     },
+     {
+      "title": "Budget-Conscious Chatbot",
+      "pitch": "A small business owner wants an AI customer support chatbot without overspending. This agent uses model routing to fallback from a powerful open-weight model to a cheaper one when budgets are tight, and enforces per-user budgets to prevent abuse. The demo wow moment: it shows a user hitting their daily limit and the bot politely declining, then routing to a cheaper model for another user.",
+      "tags": [
+       "budget",
+       "routing",
+       "guardrails",
+       "open-weight"
+      ],
+      "scores": {
+       "open_weight_models": 7,
+       "otari_features": 9,
+       "project_demo": 7
+      },
+      "rationale": "Uses one open-weight model (20 pts) plus routing, budgets, per-user budgets, and guardrails (40 pts) for 60. Demo is clear but less flashy."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "moonshotai/kimi-k2.6",
+   "run": 1,
+   "ok": false,
+   "latency": 105.14,
+   "cost": null,
+   "usage": null,
+   "servedBy": null,
+   "requestId": null,
+   "finish": null,
+   "error": "TimeoutError('The read operation timed out')"
+  },
+  {
+   "role": "ideas",
+   "model": "moonshotai/kimi-k2.6",
+   "run": 2,
+   "ok": false,
+   "latency": 105.08,
+   "cost": null,
+   "usage": null,
+   "servedBy": null,
+   "requestId": null,
+   "finish": null,
+   "error": "TimeoutError('The read operation timed out')"
+  },
+  {
+   "role": "ideas",
+   "model": "openai/gpt-oss-120b",
+   "run": 1,
+   "ok": true,
+   "latency": 43.46,
+   "cost": "0.000282",
+   "usage": {
+    "prompt_tokens": 1552,
+    "completion_tokens": 1321,
+    "total_tokens": 2873
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RbqZJMIF1mcJNpuMj0onjHUt",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "ideas": [
+     {
+      "title": "AI\u2011Powered Personal Knowledge Base Summarizer",
+      "pitch": "A solo developer can finish a personal knowledge\u2011base app that lets users paste articles or notes and instantly get concise, bullet\u2011point summaries and Q&A pairs. The agent routes queries to a summarizer model (Llama\u20112\u20117B) or a Q&A model (Mistral\u20117B) and falls back to a smaller distilled model if latency spikes, while guardrails prevent hallucinations.",
+      "tags": [
+       "summarization",
+       "knowledge\u2011base",
+       "llm",
+       "assistant"
+      ],
+      "scores": {
+       "open_weight_models": 8,
+       "otari_features": 6,
+       "project_demo": 6
+      },
+      "rationale": "open_weight_models: uses two distinct open\u2011weight models for different tasks (20\u202fpts \u2192 8/10). otari_features: implements model routing/fallbacks, guardrails, per\u2011user budgets, and web fetch for citation retrieval (4\u202ffeatures \u2192 6/10). project_demo: a working web UI with a 30\u2011second demo video showing a before/after summary (5\u202fpts each \u2192 6/10)."
+     },
+     {
+      "title": "Smart Email Draft Assistant",
+      "pitch": "An email\u2011drafting side\u2011project that auto\u2011generates professional replies based on tone, context, and user\u2011defined style guides. Otari routes the email body to a tone\u2011analysis model (Open\u2011Chat\u20113.5) and then to a generation model (Phi\u20112) while applying per\u2011user budgets and a simple guardrail to block sensitive content.",
+      "tags": [
+       "email",
+       "productivity",
+       "llm",
+       "assistant"
+      ],
+      "scores": {
+       "open_weight_models": 7,
+       "otari_features": 5,
+       "project_demo": 5
+      },
+      "rationale": "open_weight_models: two open\u2011weight models (summarizer + style guide) \u2013 18\u202fpts \u2192 7/10. otari_features: uses multiple models, per\u2011user budgets, and guardrails (3\u202ffeatures) \u2013 30\u202fpts \u2192 5/10. project_demo: functional Chrome extension demo with a 45\u2011second screen\u2011recorded walkthrough \u2013 10\u202fpts \u2192 5/10."
+     },
+     {
+      "title": "AI Travel Planner with Real\u2011time Info",
+      "pitch": "A travel\u2011planning app that creates day\u2011by\u2011day itineraries, fetches live flight/hotel prices, and suggests activities. Otari orchestrates a route\u2011planning model (Mistral\u20117B) and a price\u2011prediction model (Llama\u20112\u201113B), uses web search/fetch for live data, MCP integration for map display, and guardrails to keep suggestions family\u2011friendly.",
+      "tags": [
+       "travel",
+       "planner",
+       "web\u2011search",
+       "assistant"
+      ],
+      "scores": {
+       "open_weight_models": 8,
+       "otari_features": 7,
+       "project_demo": 7
+      },
+      "rationale": "open_weight_models: two open\u2011weight models for itinerary generation and price prediction \u2013 20\u202fpts \u2192 8/10. otari_features: employs model routing/fallbacks, web search/fetch, MCP (map) integration, guardrails, and multiple\u2011model roles (5\u202ffeatures) \u2013 50\u202fpts \u2192 7/10. project_demo: end\u2011to\u2011end demo where a user inputs a destination and sees a live, interactive itinerary with price links \u2013 10\u202fpts \u2192 7/10."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "openai/gpt-oss-120b",
+   "run": 2,
+   "ok": true,
+   "latency": 39.49,
+   "cost": "0.000261",
+   "usage": {
+    "prompt_tokens": 1552,
+    "completion_tokens": 1200,
+    "total_tokens": 2752
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RWHIoV5tOSvoU4hSQqPaerBQ",
+   "finish": "stop",
+   "error": null,
+   "validJson": true,
+   "output": {
+    "ideas": [
+     {
+      "title": "Personal Knowledge Base Assistant",
+      "pitch": "A browser extension that lets users ask natural\u2011language questions about their saved notes, PDFs, and web clippings. It uses an embedding model to retrieve relevant chunks and a generation model to answer, showing a live demo where a user asks a multi\u2011step question and gets a concise, sourced response.",
+      "tags": [
+       "knowledge\u2011base",
+       "assistant",
+       "retrieval",
+       "llm"
+      ],
+      "scores": {
+       "open_weight_models": 8,
+       "otari_features": 7,
+       "project_demo": 5
+      },
+      "rationale": "Open\u2011weight models: uses two distinct models (embedding + generation) meaningfully (20\u202fpts +10\u202fpts). Otari features: employs model routing, web fetch for PDFs, budgets, guardrails, per\u2011user budgets, and multiple\u2011model roles (\u224835\u202fpts). Demo: functional Chrome extension with a short screencast (5\u202fpts). Total \u224870/100 \u2192 7\u20118/10."
+     },
+     {
+      "title": "GitHub PR Code Review Bot",
+      "pitch": "A GitHub Action that automatically reviews pull requests, flags potential bugs, suggests improvements, and can run safe code snippets. The wow moment is a live PR where the bot comments with a detailed review and a runnable example fixing a lint error.",
+      "tags": [
+       "code\u2011review",
+       "github",
+       "automation",
+       "ai"
+      ],
+      "scores": {
+       "open_weight_models": 7,
+       "otari_features": 8,
+       "project_demo": 5
+      },
+      "rationale": "Open\u2011weight models: uses a code\u2011focused LLM for analysis and a general LLM for explanations (20\u202fpts +10\u202fpts). Otari features: MCP integration (GitHub), code execution sandbox, model routing, budgets, guardrails, multiple\u2011model roles, per\u2011user budgets (\u224845\u202fpts). Demo: fully functional Action with a recorded PR walkthrough (5\u202fpts). Total \u224880/100 \u2192 8/10."
+     },
+     {
+      "title": "Real\u2011time Travel Itinerary Planner",
+      "pitch": "A web app where users type a destination and dates, and the AI builds a day\u2011by\u2011day itinerary, fetching live flight and hotel prices. The demo shows the app generating an itinerary and instantly updating prices when the user tweaks travel dates.",
+      "tags": [
+       "travel",
+       "itinerary",
+       "web\u2011search",
+       "assistant"
+      ],
+      "scores": {
+       "open_weight_models": 6,
+       "otari_features": 7,
+       "project_demo": 5
+      },
+      "rationale": "Open\u2011weight models: one LLM for itinerary generation and a lightweight retrieval model for price lookup (20\u202fpts +10\u202fpts). Otari features: web search/fetch, model routing, budgets, guardrails, multiple\u2011model roles, per\u2011user budgets (\u224835\u202fpts). Demo: working UI with live data fetch and AI\u2011generated plan (5\u202fpts). Total \u224870/100 \u2192 7/10."
+     }
+    ]
+   },
+   "schemaErrors": [],
+   "schemaValid": true
+  },
+  {
+   "role": "ideas",
+   "model": "z-ai/glm-4.7",
+   "run": 1,
+   "ok": false,
+   "latency": 105.1,
+   "cost": null,
+   "usage": null,
+   "servedBy": null,
+   "requestId": null,
+   "finish": null,
+   "error": "TimeoutError('The read operation timed out')"
+  },
+  {
+   "role": "ideas",
+   "model": "z-ai/glm-4.7",
+   "run": 2,
+   "ok": false,
+   "latency": 105.09,
+   "cost": null,
+   "usage": null,
+   "servedBy": null,
+   "requestId": null,
+   "finish": null,
+   "error": "TimeoutError('The read operation timed out')"
+  },
+  {
+   "role": "tools",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 1,
+   "idea": "move",
+   "ok": true,
+   "latency": 1.74,
+   "cost": "0.000100",
+   "usage": {
+    "prompt_tokens": 893,
+    "completion_tokens": 36,
+    "total_tokens": 929
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RrVF8xSEHp5lsSbf8sYwaFl0",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 1,
+   "idea": "create",
+   "ok": true,
+   "latency": 1.9,
+   "cost": "0.000119",
+   "usage": {
+    "prompt_tokens": 918,
+    "completion_tokens": 66,
+    "total_tokens": 984
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RmD3staytsbT849yVg9yHHwA",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 2,
+   "idea": "move",
+   "ok": true,
+   "latency": 1.4,
+   "cost": "0.000100",
+   "usage": {
+    "prompt_tokens": 893,
+    "completion_tokens": 36,
+    "total_tokens": 929
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RIccpgTH4kdEQ0BV7pmKsX2M",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "run": 2,
+   "idea": "create",
+   "ok": true,
+   "latency": 1.86,
+   "cost": "0.000119",
+   "usage": {
+    "prompt_tokens": 918,
+    "completion_tokens": 66,
+    "total_tokens": 984
+   },
+   "servedBy": "alibaba/qwen3-235b-a22b-instruct-2507",
+   "requestId": "chatcmpl-RtdYZ4B3hMwQ5GARgP830lcv",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 1,
+   "idea": "move",
+   "ok": true,
+   "latency": 2.12,
+   "cost": "0.000049",
+   "usage": {
+    "prompt_tokens": 1000,
+    "completion_tokens": 79,
+    "total_tokens": 1079
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RwMzOTwIQtimzpyCbIGqLDUu",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 1,
+   "idea": "create",
+   "ok": true,
+   "latency": 2.24,
+   "cost": "0.000059",
+   "usage": {
+    "prompt_tokens": 1021,
+    "completion_tokens": 127,
+    "total_tokens": 1148
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RBR2Yb8Hh1kmdLp4IFaYz8Xp",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 2,
+   "idea": "move",
+   "ok": true,
+   "latency": 2.43,
+   "cost": "0.000049",
+   "usage": {
+    "prompt_tokens": 1000,
+    "completion_tokens": 79,
+    "total_tokens": 1079
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-R3mhuENHhKBuVmmRwTCpxBBs",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "deepseek/deepseek-v4-flash",
+   "run": 2,
+   "idea": "create",
+   "ok": true,
+   "latency": 2.14,
+   "cost": "0.000078",
+   "usage": {
+    "prompt_tokens": 1021,
+    "completion_tokens": 127,
+    "total_tokens": 1148
+   },
+   "servedBy": "deepseek/deepseek-v4-flash",
+   "requestId": "chatcmpl-RsGLgBzks6kT4coCJfYgNwne",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "openai/gpt-oss-120b",
+   "run": 1,
+   "idea": "move",
+   "ok": true,
+   "latency": 2.66,
+   "cost": "0.000038",
+   "usage": {
+    "prompt_tokens": 695,
+    "completion_tokens": 70,
+    "total_tokens": 765
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RpPL1ieEcbVWeQujW7at1yIg",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "openai/gpt-oss-120b",
+   "run": 1,
+   "idea": "create",
+   "ok": true,
+   "latency": 4.34,
+   "cost": "0.000054",
+   "usage": {
+    "prompt_tokens": 715,
+    "completion_tokens": 160,
+    "total_tokens": 875
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RXU1OGipTJP4uuE5ewrQvgcB",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "openai/gpt-oss-120b",
+   "run": 2,
+   "idea": "move",
+   "ok": true,
+   "latency": 2.75,
+   "cost": "0.000038",
+   "usage": {
+    "prompt_tokens": 695,
+    "completion_tokens": 70,
+    "total_tokens": 765
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RDJAPi3fVSQECnOLpYilbMuS",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "openai/gpt-oss-120b",
+   "run": 2,
+   "idea": "create",
+   "ok": true,
+   "latency": 6.22,
+   "cost": "0.000049",
+   "usage": {
+    "prompt_tokens": 715,
+    "completion_tokens": 130,
+    "total_tokens": 845
+   },
+   "servedBy": "openai/gpt-oss-120b",
+   "requestId": "chatcmpl-RbxSlT4jJdYx5MWxVK8Of0xe",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "moonshotai/kimi-k2.6",
+   "run": 1,
+   "idea": "move",
+   "ok": true,
+   "latency": 4.23,
+   "cost": "0.000434",
+   "usage": {
+    "prompt_tokens": 675,
+    "completion_tokens": 89,
+    "total_tokens": 764
+   },
+   "servedBy": "moonshotai/kimi-k2.6",
+   "requestId": "chatcmpl-RUOdGZGQ6lOPVLL4BB3dZ2wq",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_102",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "moonshotai/kimi-k2.6",
+   "run": 1,
+   "idea": "create",
+   "ok": true,
+   "latency": 5.74,
+   "cost": "0.000794",
+   "usage": {
+    "prompt_tokens": 696,
+    "completion_tokens": 138,
+    "total_tokens": 834
+   },
+   "servedBy": "moonshotai/kimi-k2.6",
+   "requestId": "chatcmpl-RUMM2DHj25ycWfk7ZZ7wFBK5",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "moonshotai/kimi-k2.6",
+   "run": 2,
+   "idea": "move",
+   "ok": true,
+   "latency": 3.74,
+   "cost": "0.000388",
+   "usage": {
+    "prompt_tokens": 675,
+    "completion_tokens": 76,
+    "total_tokens": 751
+   },
+   "servedBy": "moonshotai/kimi-k2.6",
+   "requestId": "chatcmpl-Rs5IjFnZI1o6eRNzgbNV6A7I",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": false,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "id": "t_101",
+       "milestone": "demo",
+       "done": true
+      },
+      "validJson": true
+     }
+    ],
+    "extraCalls": []
+   },
+   "text": ""
+  },
+  {
+   "role": "tools",
+   "model": "moonshotai/kimi-k2.6",
+   "run": 2,
+   "idea": "create",
+   "ok": true,
+   "latency": 6.6,
+   "cost": "0.000719",
+   "usage": {
+    "prompt_tokens": 696,
+    "completion_tokens": 166,
+    "total_tokens": 862
+   },
+   "servedBy": "moonshotai/kimi-k2.6",
+   "requestId": "chatcmpl-RhhkNL3wGfnyZNJbmPXMeYhV",
+   "finish": "tool_calls",
+   "error": null,
+   "toolResult": {
+    "correct": true,
+    "estimateSet": true,
+    "calls": [
+     {
+      "name": "update-task",
+      "args": {
+       "hackathonId": "hk_7f3a",
+       "title": "Write Otari feedback answers",
+       "milestone": "submit",
+       "day": "2026-11-11",
+       "estimateHours": 1
+      },
+      "validJson": true
+     }
+    ]
+   },
+   "text": ""
+  }
+ ]
+}
