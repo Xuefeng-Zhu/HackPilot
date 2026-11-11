@@ -41,6 +41,23 @@ const llmExtractionSchema = z.object({
 
 export type ExtractionMode = "auto" | "heuristic";
 
+/**
+ * Models sometimes return unweighted criteria as 1 each (or fractions).
+ * Rescale to whole percents summing to 100 when the total is far off.
+ */
+export function toPercentWeights<T extends { weight: number }>(rubric: T[]): T[] {
+  const total = rubric.reduce((s, c) => s + (Number.isFinite(c.weight) && c.weight > 0 ? c.weight : 0), 0);
+  if (!rubric.length || Math.abs(total - 100) <= 5) return rubric;
+  const raw = rubric.map((c) => (total > 0 ? (Math.max(c.weight, 0) / total) * 100 : 100 / rubric.length));
+  const out = raw.map((w) => Math.round(w));
+  const diff = 100 - out.reduce((s, w) => s + w, 0);
+  if (diff) {
+    const i = raw.indexOf(Math.max(...raw));
+    out[i] = (out[i] ?? 0) + diff;
+  }
+  return rubric.map((c, i) => ({ ...c, weight: out[i] ?? c.weight }));
+}
+
 export async function extractFromPage(
   page: FetchedPage,
   mode: ExtractionMode,
@@ -91,7 +108,7 @@ export async function extractFromPage(
     deadlineAt,
     timezone: normalizeTimezone(tz),
     prizes: object.prizes.length ? object.prizes : base.prizes,
-    rubric: object.rubric.length ? normalizeRubric(object.rubric) : base.rubric,
+    rubric: object.rubric.length ? normalizeRubric(toPercentWeights(object.rubric)) : base.rubric,
     requirements: object.requirements.length
       ? object.requirements
       : base.requirements,

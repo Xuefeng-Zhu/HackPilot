@@ -45,6 +45,7 @@ export function ImportForm({ compact = false }: { compact?: boolean }) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pageText, setPageText] = useState("");
   const importHackathon = useActionMutation("import-hackathon", {
+    timeoutMs: 300_000,
     onSuccess: (result) => {
       toast.success(result.message);
       for (const w of result.warnings) toast.warning(w);

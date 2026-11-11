@@ -363,6 +363,7 @@ export function OverviewTab({ ws }: { ws: WorkspaceOut }) {
   const h = ws.hackathon;
   const [deadlineOpen, setDeadlineOpen] = useState(false);
   const reimport = useActionMutation("import-hackathon", {
+    timeoutMs: 300_000,
     onSuccess: (r) => {
       toast.success(r.message);
       for (const w of r.warnings) toast.warning(w);

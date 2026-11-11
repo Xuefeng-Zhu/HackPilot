@@ -375,6 +375,8 @@ export function IdeasTab({ ws }: { ws: WorkspaceOut }) {
     onError: (e, _i, ctx) => rollback(ctx, e, "Could not delete the idea."),
   });
   const generate = useActionMutation("generate-ideas", {
+    // MCP research on Otari runs before brainstorming; allow more than the 60 s client default.
+    timeoutMs: 300_000,
     onSuccess: (r) => toast.success(r.message),
     onError: (e) => {
       const code = e && typeof e === "object" && "errorCode" in e ? (e as { errorCode?: string }).errorCode : undefined;
