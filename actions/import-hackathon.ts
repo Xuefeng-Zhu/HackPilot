@@ -9,7 +9,15 @@ import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
 import { extractFromPage } from "../server/lib/import.js";
+import { failOtari } from "../server/lib/llm.js";
 import {
+  otariGuardCheck,
+  OtariError,
+  otariWebFetch,
+  otariWebSearch,
+} from "../server/lib/otari.js";
+import {
+  type FetchedPage,
   fetchPage,
   htmlToText,
   MAX_SOURCE_TEXT,
@@ -27,7 +35,7 @@ const errors = defineActionErrors("already_imported", "unauthenticated");
 
 export default defineAction({
   description:
-    "Import a hackathon from its public URL: fetch the page server-side, extract name, deadline (+ timezone), prizes, weighted judging rubric, and submission requirements (LLM via OpenRouter when configured, deterministic parser otherwise), then create the workspace and its submission checklist. Pass id to re-import into an existing workspace (keeps ideas and tasks). Fails with already_imported (409, details.id) if the URL is already a workspace.",
+    "Import a hackathon from its public URL: fetch the page server-side, extract name, deadline (+ timezone), prizes, weighted judging rubric, and submission requirements. Fetches through Otari's otari_web_fetch tool when the workspace enables it (local fetch otherwise, otari_web_search as a last resort), screens the untrusted page text with an open-weight guard model, then extracts with a small open-weight model on Otari (deterministic parser as fallback), then create the workspace and its submission checklist. Pass id to re-import into an existing workspace (keeps ideas and tasks). Fails with already_imported (409, details.id) if the URL is already a workspace.",
   schema: z.object({
     url: z
       .string()
@@ -44,7 +52,7 @@ export default defineAction({
       .enum(["auto", "heuristic"])
       .optional()
       .describe(
-        '"auto" (default) uses the LLM when OPENROUTER_API_KEY is set; "heuristic" forces the deterministic parser',
+        '"auto" (default) uses the LLM when a model key (OTARI_API_KEY first) is set; "heuristic" forces the deterministic parser',
       ),
     pageText: z
       .string()
@@ -72,6 +80,16 @@ export default defineAction({
     criteria: z.number(),
     requirementsAdded: z.number(),
     warnings: z.array(z.string()),
+    fetchedVia: z.enum(["otari_web_fetch", "otari_web_search", "direct", "pasted"]),
+    guard: z
+      .object({
+        flagged: z.boolean(),
+        verdict: z.string(),
+        categories: z.array(z.string()),
+        model: z.string(),
+        otariRequestId: z.string().optional(),
+      })
+      .optional(),
     message: z.string(),
     nextRequiredAction: z.string().optional(),
   }),
@@ -111,18 +129,56 @@ export default defineAction({
       }
     }
 
-    const page = args.pageText?.trim()
-      ? {
-          url,
-          html: "",
-          ...htmlToText(
-            args.pageText.includes("<")
-              ? args.pageText
-              : args.pageText.replace(/\n/g, "<br>"),
-          ),
+    const textPage = (raw: string): FetchedPage => ({
+      url,
+      html: raw.includes("<") ? raw : "",
+      ...htmlToText(raw.includes("<") ? raw : raw.replace(/\n/g, "<br>")),
+    });
+    let fetchedVia: "otari_web_fetch" | "otari_web_search" | "direct" | "pasted" = "pasted";
+    let page: FetchedPage;
+    let guard: Awaited<ReturnType<typeof otariGuardCheck>> = null;
+    const extraWarnings: string[] = [];
+    let extracted: Awaited<ReturnType<typeof extractFromPage>>;
+    try {
+      if (args.pageText?.trim()) {
+        page = textPage(args.pageText);
+      } else {
+        // 1. Otari's gateway-run fetch (when the workspace enables it).
+        const viaOtari = await otariWebFetch(url);
+        if (viaOtari) {
+          page = textPage(viaOtari.text.slice(0, 200_000));
+          fetchedVia = "otari_web_fetch";
+        } else {
+          // 2. Local SSRF-guarded fetch; 3. Otari web search when the site blocks us.
+          try {
+            page = await fetchPage(url);
+            fetchedVia = "direct";
+          } catch (error) {
+            const found = await otariWebSearch(`${url} hackathon rules prizes judging criteria deadline`);
+            if (!found) throw error;
+            page = textPage(found.text.slice(0, 200_000));
+            fetchedVia = "otari_web_search";
+            extraWarnings.push("The site blocked a direct fetch; details came from Otari web search results. Double-check them.");
+          }
         }
-      : await fetchPage(url);
-    const extracted = await extractFromPage(page, args.mode ?? "auto");
+      }
+      // Untrusted page text: screen it for prompt injection before any model reads it.
+      let mode = args.mode ?? "auto";
+      if (mode === "auto") {
+        guard = await otariGuardCheck(page.text);
+        if (guard?.flagged) {
+          mode = "heuristic";
+          extraWarnings.push(
+            `Otari guard model (${guard.model}) flagged the page text as ${guard.verdict}${guard.categories.length ? ` (${guard.categories.join(", ")})` : ""}, so it was parsed without an LLM. Review the extracted fields.`,
+          );
+        }
+      }
+      extracted = await extractFromPage(page, mode);
+    } catch (error) {
+      if (error instanceof OtariError && error.fatal) failOtari(error);
+      throw error;
+    }
+    extracted = { ...extracted, warnings: [...extracted.warnings, ...extraWarnings] };
     const timezone = args.timezone
       ? normalizeTimezone(args.timezone)
       : extracted.timezone;
@@ -236,6 +292,18 @@ export default defineAction({
       criteria: extracted.rubric.length,
       requirementsAdded,
       warnings: extracted.warnings,
+      fetchedVia,
+      ...(guard
+        ? {
+            guard: {
+              flagged: guard.flagged,
+              verdict: guard.verdict,
+              categories: guard.categories,
+              model: guard.model,
+              ...(guard.requestId ? { otariRequestId: guard.requestId } : {}),
+            },
+          }
+        : {}),
       message: `${existing ? "Re-imported" : "Imported"} ${name} (${extracted.method}): ${extracted.rubric.length} criteria, ${extracted.prizes.length} prizes, ${requirementsAdded} checklist items.`,
       nextRequiredAction: extracted.warnings.length
         ? "update-hackathon"
