@@ -542,8 +542,12 @@ export async function otariWebSearch(query: string): Promise<{ text: string; req
 export async function otariRunPython(code: string, purpose: string): Promise<{ stdout: string; requestId?: string; model: string } | null> {
   if (!(await isOtariToolAvailable("otari_code_execution"))) return null;
   try {
+    // Models occasionally answer without calling the tool; give the role's
+    // fallback list two passes before using local math.
+    const models = otariModels("judge");
     const r = await otariChat({
       role: "judge",
+      models: [...models, ...models],
       tools: [{ type: "otari_code_execution" }],
       maxTokens: 400,
       messages: [
