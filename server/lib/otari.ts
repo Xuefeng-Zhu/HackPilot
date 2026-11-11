@@ -30,12 +30,14 @@ export type OtariRole = "extract" | "ideas" | "judge" | "build" | "guard" | "res
  * First entry is preferred; the rest are fallbacks in order.
  */
 export const DEFAULT_ROLE_MODELS: Record<OtariRole, readonly string[]> = {
-  // Small, fast MoE for page → JSON extraction.
-  extract: ["alibaba/qwen3-30b-a3b-instruct-2507", "nvidia/nemotron-3-nano-30b-a3b", "openai/gpt-oss-20b"],
-  // Larger model for brainstorming and planning.
-  ideas: ["alibaba/qwen3-235b-a22b-instruct-2507", "deepseek/deepseek-v4-flash", "meta/llama-3.3-70b-instruct"],
+  // Page → JSON extraction. Bench (docs/MODEL-BENCH.md): qwen3-235b most accurate (0.85),
+  // deepseek-v4-flash nearly as good (0.81) at ~4 s; small qwen3-30b kept as a last resort.
+  extract: ["alibaba/qwen3-235b-a22b-instruct-2507", "deepseek/deepseek-v4-flash", "alibaba/qwen3-30b-a3b-instruct-2507"],
+  // Brainstorming and planning. Bench: deepseek-v4-flash rated best and is cheapest on output.
+  ideas: ["deepseek/deepseek-v4-flash", "alibaba/qwen3-235b-a22b-instruct-2507", "meta/llama-3.3-70b-instruct"],
   // Judge scores ideas and drives the code-execution tool.
-  judge: ["deepseek/deepseek-v4-flash", "alibaba/qwen3-235b-a22b-instruct-2507"],
+  // Bench: qwen3-235b over-scored a weak entry, so gpt-oss-120b is the fallback judge.
+  judge: ["deepseek/deepseek-v4-flash", "openai/gpt-oss-120b"],
   // Coder model for Build it generation and repair rounds.
   build: ["alibaba/qwen3-coder-480b-a35b-instruct", "alibaba/qwen3-coder-30b-a3b-instruct"],
   // Safety classifier for untrusted imported page text.
@@ -43,7 +45,7 @@ export const DEFAULT_ROLE_MODELS: Record<OtariRole, readonly string[]> = {
   // Tool-calling model for managed MCP / web research.
   research: ["alibaba/qwen3-235b-a22b-instruct-2507", "moonshotai/kimi-k2.6"],
   // Pilot chat (the `otari` agent engine).
-  chat: ["alibaba/qwen3-235b-a22b-instruct-2507"],
+  chat: ["alibaba/qwen3-235b-a22b-instruct-2507", "deepseek/deepseek-v4-flash"],
 };
 
 // guard:allow-env-credential — only nonsecret model and behavior settings use this helper

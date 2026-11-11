@@ -52,8 +52,8 @@ afterEach(() => {
 
 describe("role models", () => {
   it("uses distinct open-weight defaults per role and honors env overrides", () => {
-    expect(otariModels("extract")[0]).toBe("alibaba/qwen3-30b-a3b-instruct-2507");
-    expect(otariModels("ideas")[0]).toBe("alibaba/qwen3-235b-a22b-instruct-2507");
+    expect(otariModels("extract")[0]).toBe("alibaba/qwen3-235b-a22b-instruct-2507");
+    expect(otariModels("ideas")[0]).toBe("deepseek/deepseek-v4-flash");
     expect(otariModels("build")[0]).toBe("alibaba/qwen3-coder-480b-a35b-instruct");
     expect(otariModels("guard")[0]).toBe("alibaba/qwen3guard-gen-8b");
     vi.stubEnv("OTARI_MODELS_BUILD", " my-routing-policy , openai/gpt-oss-120b ");
@@ -88,7 +88,7 @@ describe("otariChat", () => {
     vi.stubGlobal("fetch", fetchMock);
     const r = await otariChat({ role: "ideas", messages: [{ role: "user", content: "x" }] });
     const body = bodyOf(fetchMock.mock.calls[0]!);
-    expect(body).toMatchObject({ model: "alibaba/qwen3-235b-a22b-instruct-2507", user: "builder@example.com", guardrails: [{ profile: "prompt-injection", mode: "block" }] });
+    expect(body).toMatchObject({ model: "deepseek/deepseek-v4-flash", user: "builder@example.com", guardrails: [{ profile: "prompt-injection", mode: "block" }] });
     expect(r).toMatchObject({ text: "hi", requestId: "req-1", servedBy: "deepinfra:Qwen/Test", costUsd: 0.0001 });
   });
 
@@ -98,7 +98,7 @@ describe("otariChat", () => {
       .mockResolvedValueOnce(completion("ok"));
     vi.stubGlobal("fetch", fetchMock);
     const r = await otariChat({ role: "extract", messages: [] });
-    expect(r.model).toBe("nvidia/nemotron-3-nano-30b-a3b");
+    expect(r.model).toBe("deepseek/deepseek-v4-flash");
     expect(r.fallback).toBe(true);
   });
 

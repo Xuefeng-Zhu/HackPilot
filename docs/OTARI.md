@@ -12,13 +12,13 @@ HackPilot sends its model calls through [Otari](https://api.otari.ai/api/v1), Mo
 
 | Role | Used by | Models, in fallback order | Env override |
 | --- | --- | --- | --- |
-| extract | import-hackathon (page → JSON), web fetch/search tool calls | `alibaba/qwen3-30b-a3b-instruct-2507` → `nvidia/nemotron-3-nano-30b-a3b` → `openai/gpt-oss-20b` | `OTARI_MODELS_EXTRACT` |
-| ideas | generate-ideas | `alibaba/qwen3-235b-a22b-instruct-2507` → `deepseek/deepseek-v4-flash` → `meta/llama-3.3-70b-instruct` | `OTARI_MODELS_IDEAS` |
-| judge | score-idea (auto), driving `otari_code_execution` | `deepseek/deepseek-v4-flash` → `alibaba/qwen3-235b-a22b-instruct-2507` | `OTARI_MODELS_JUDGE` |
+| extract | import-hackathon (page → JSON), web fetch/search tool calls | `alibaba/qwen3-235b-a22b-instruct-2507` → `deepseek/deepseek-v4-flash` → `alibaba/qwen3-30b-a3b-instruct-2507` | `OTARI_MODELS_EXTRACT` |
+| ideas | generate-ideas | `deepseek/deepseek-v4-flash` → `alibaba/qwen3-235b-a22b-instruct-2507` → `meta/llama-3.3-70b-instruct` | `OTARI_MODELS_IDEAS` |
+| judge | score-idea (auto), driving `otari_code_execution` | `deepseek/deepseek-v4-flash` → `openai/gpt-oss-120b` | `OTARI_MODELS_JUDGE` |
 | build | Build it generation and repair (streamed) | `alibaba/qwen3-coder-480b-a35b-instruct` → `alibaba/qwen3-coder-30b-a3b-instruct` | `OTARI_MODELS_BUILD` |
 | guard | prompt-injection screen of imported pages | `alibaba/qwen3guard-gen-8b` → `meta/llama-guard-4-12b` | `OTARI_MODELS_GUARD` |
 | research | managed-MCP research before brainstorming | `alibaba/qwen3-235b-a22b-instruct-2507` → `moonshotai/kimi-k2.6` | `OTARI_MODELS_RESEARCH` |
-| chat | Pilot chat (`otari` agent engine) | `alibaba/qwen3-235b-a22b-instruct-2507` | `OTARI_MODELS_CHAT` |
+| chat | Pilot chat (`otari` agent engine) | `alibaba/qwen3-235b-a22b-instruct-2507` → `deepseek/deepseek-v4-flash` | `OTARI_MODELS_CHAT` |
 
 Any entry can also be the name of an Otari routing policy, for example `OTARI_MODELS_BUILD=hackpilot-build`. Then the gateway handles fallback on its side, and HackPilot still falls back to the next entry if that fails.
 
