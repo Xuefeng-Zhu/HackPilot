@@ -32,13 +32,19 @@ Open the address printed by the dev server, then sign in to reach **Hackathons**
 
 ### LLM providers
 
-| Feature                        | Configuration                                                                                                                                                                                       |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fast structured actions        | `NVIDIA_API_KEY` enables NVIDIA first. The default model is `nvidia/nemotron-3.5-super-vl-120b-a12b` and `NVIDIA_MODEL` overrides it. `OPENROUTER_API_KEY` enables the OpenRouter fallback.         |
-| Build it generation and repair | Set `OPENROUTER_API_KEY`. The default is `anthropic/claude-haiku-5.5`. Override it with `OPENROUTER_BUILD_MODEL`.                                                                                   |
-| Pilot chat                     | Choose a provider in **Settings → AI engine**. A deployment with `OPENROUTER_API_KEY` configures OpenRouter with `anthropic/claude-haiku-5.5` by default. `OPENROUTER_MODEL` can set another model. |
+HackPilot routes its model calls through [Mozilla's Otari AI gateway](https://api.otari.ai) when `OTARI_API_KEY` is set, using open-weight models with a separate role for each kind of call. See [docs/OTARI.md](docs/OTARI.md) for the features it uses, where they live in the code, and the dashboard setup.
 
-A regular build falls back to a deterministic starter when model generation is unavailable or fails. Design builds require the build model and access to the linked prototype. See [`.env.example`](.env.example) for configuration options.
+| Feature                          | Configuration                                                                                                                                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Otari gateway (preferred)        | `OTARI_API_KEY` (a service key for per-user budgets) and optional `OTARI_BASE_URL`. `OTARI_MODELS_<ROLE>` sets an ordered fallback list or an Otari routing policy for each role.                 |
+| Import (extract role)            | `alibaba/qwen3-30b-a3b-instruct-2507` → `nvidia/nemotron-3-nano-30b-a3b` → `openai/gpt-oss-20b`. Pages are fetched with `otari_web_fetch` when enabled, then screened by `alibaba/qwen3guard-gen-8b`. |
+| Ideas (ideas + research roles)   | `alibaba/qwen3-235b-a22b-instruct-2507` → `deepseek/deepseek-v4-flash` → `meta/llama-3.3-70b-instruct`. Research runs first through Otari-managed MCP (DeepWiki by default, `OTARI_MCP_URL`).          |
+| Scoring (judge role)             | `deepseek/deepseek-v4-flash` → `alibaba/qwen3-235b-a22b-instruct-2507`. The weighted totals are computed in `otari_code_execution`.                                                                       |
+| Build it generation and repair   | `alibaba/qwen3-coder-480b-a35b-instruct` → `alibaba/qwen3-coder-30b-a3b-instruct` on Otari, with OpenRouter (`OPENROUTER_API_KEY`, `OPENROUTER_BUILD_MODEL`) as the last resort.                       |
+| Pilot chat                       | `AGENT_ENGINE=otari`, or choose **Otari** in **Settings → AI engine**. The default is `alibaba/qwen3-235b-a22b-instruct-2507` (`OTARI_MODELS_CHAT`). Other providers work as before.                   |
+| Direct fallbacks                 | `NVIDIA_API_KEY` (`NVIDIA_MODEL`) and `OPENROUTER_API_KEY` (`OPENROUTER_MODEL`) are used only when Otari is not configured or every Otari model fails.                                                |
+
+A regular build falls back to a deterministic starter when model generation is unavailable or fails. Design builds require the build model and access to the linked prototype. See [`.env.example`](.env.example) for configuration options. Run the live Otari smoke test with `npx vitest --run -c vitest.smoke.config.ts`.
 
 ## Demo walkthrough
 
