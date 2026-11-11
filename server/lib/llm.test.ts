@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const mockSecrets = vi.hoisted(() => ({} as Record<string, string | undefined>));
 vi.mock("@agent-native/core/server", () => ({
   resolveSecret: vi.fn(async (name: string) => mockSecrets[name] || null),
+  getRequestUserEmail: vi.fn(() => undefined),
 }));
 
 import { resolveSecret } from "@agent-native/core/server";
@@ -18,6 +19,7 @@ function mockProviders() {
   env("OPENROUTER_API_KEY", "or-test");
   env("HACKPILOT_DISABLE_PROVIDERS", "");
   env("OPENROUTER_BUILD_MODEL", "");
+  env("OTARI_API_KEY", "");
 }
 
 const stream = (content = "output") => new Response(
@@ -60,7 +62,8 @@ describe("build provider selection", () => {
 
   it("does not bypass the framework when it denies a deployment key", async () => {
     mockProviders();
-    vi.mocked(resolveSecret).mockResolvedValueOnce(null);
+    // OTARI_API_KEY is unset in these tests; then the framework denies OpenRouter.
+    vi.mocked(resolveSecret).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     expect(await providerChain("build")).toEqual([]);
   });
 });

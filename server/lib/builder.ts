@@ -397,7 +397,7 @@ async function install(dir: string, p: Progress, label = "Install dependencies (
 /** "nemotron-3.5-super-vl-120b-a12b on NVIDIA" — model ids often already carry the vendor prefix. */
 function modelLabel(provider?: string, model?: string): string {
   const name = (model ?? "model").split("/").pop() ?? "model";
-  const where = provider === "nvidia" ? "NVIDIA" : provider === "openrouter" ? "OpenRouter" : provider;
+  const where = provider === "otari" ? "Otari" : provider === "nvidia" ? "NVIDIA" : provider === "openrouter" ? "OpenRouter" : provider;
   return where ? `${name} on ${where}` : name;
 }
 
@@ -407,7 +407,7 @@ async function generateLlm(input: Parameters<typeof ideaPrompt>[0], p: Progress,
     { role: "user", content: ideaPrompt(input) },
     ...(designReference ? [designMessage(designReference)] : []),
   ];
-  const skip: ("nvidia" | "openrouter")[] = [];
+  const skip: ("otari" | "nvidia" | "openrouter")[] = [];
   for (let attempt = 0; attempt < 2; attempt++) {
     // Retry the selected provider if unusable output exhausted the chain.
     const chain = await providerChain("build");
@@ -442,7 +442,7 @@ async function repair(dir: string, failing: { label: string; output: string }, r
     },
     ...(designReference ? [designMessage(designReference)] : []),
   ];
-  const skip: ("nvidia" | "openrouter")[] = [];
+  const skip: ("otari" | "nvidia" | "openrouter")[] = [];
   for (let attempt = 0; attempt < 2; attempt++) {
     const chain = await providerChain("build");
     if (!chain.some((t) => !skip.includes(t.provider))) skip.length = 0;
@@ -565,7 +565,7 @@ async function pipeline(buildId: string) {
       await p.finish("failed", { error: "A build model is required to use the Design prototype. Configure the build model and retry, or turn off Use Design prototype." });
       return;
     }
-    await p.info("generating", "No build model available", "Build it requires an enabled OpenRouter provider and OPENROUTER_API_KEY. Using the deterministic starter template instead.");
+    await p.info("generating", "No build model available", "Build it requires OTARI_API_KEY (Otari gateway) or an enabled OpenRouter provider and OPENROUTER_API_KEY. Using the deterministic starter template instead.");
     mode = "template";
   }
   if (designId) {

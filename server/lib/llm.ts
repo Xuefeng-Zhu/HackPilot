@@ -2,9 +2,12 @@
  * Server-side LLM calls for HackPilot actions.
  *
  * Fast structured calls use the first configured provider and fall back on an
- * error, 404/410 model-not-available, 429, or timeout. Build calls use
- * OpenRouter only, with OPENROUTER_BUILD_MODEL as an optional override:
+ * error, 404/410 model-not-available, 429, or timeout. Order:
  *
+ *   0. Mozilla Otari gateway (server/lib/otari.ts), when OTARI_API_KEY is set.
+ *      Open-weight models per role (extract / ideas / judge for structured
+ *      calls, build for Build it), each with its own ordered fallback list.
+ *      Guardrail and budget refusals stop the chain with a clear message.
  *   1. NVIDIA (integrate.api.nvidia.com, OpenAI-compatible)
  *      key `NVIDIA_API_KEY`; model `NVIDIA_MODEL` for fast structured calls.
  *   2. OpenRouter
@@ -21,7 +24,21 @@ import { resolveSecret } from "@agent-native/core/server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateObject, type LanguageModel } from "ai";
-import type { z } from "zod";
+import { z } from "zod";
+
+import {
+  absorbOtariError,
+  classifyOtariError,
+  isOtariConfigured,
+  otariApiKey,
+  otariBaseUrl,
+  otariBodyExtras,
+  otariChat,
+  OtariError,
+  otariModels,
+  type OtariRole,
+  otariUserMessage,
+} from "./otari.js";
 
 export const OPENROUTER_KEY = "OPENROUTER_API_KEY";
 export const NVIDIA_KEY = "NVIDIA_API_KEY";
@@ -33,7 +50,7 @@ export const DEFAULT_NVIDIA_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
 export const DEFAULT_NVIDIA_BUILD_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
 export const DEFAULT_OPENROUTER_BUILD_MODEL = "anthropic/claude-haiku-5.5";
 
-export type ProviderId = "nvidia" | "openrouter";
+export type ProviderId = "otari" | "nvidia" | "openrouter";
 export type Purpose = "fast" | "build";
 
 interface ProviderTarget {
@@ -67,6 +84,12 @@ export async function providerChain(purpose: Purpose): Promise<ProviderTarget[]>
   const disabled = new Set(
     (env("HACKPILOT_DISABLE_PROVIDERS") ?? "").split(",").map((s) => s.trim()),
   );
+  const otariKey = await otariApiKey();
+  if (otariKey) {
+    for (const model of otariModels(purpose === "build" ? "build" : "extract")) {
+      chain.push({ provider: "otari", model, apiKey: otariKey, baseURL: otariBaseUrl() });
+    }
+  }
   const useOpenRouterBuild = purpose === "build";
   const nv = useOpenRouterBuild || disabled.has("nvidia") ? null : await resolveKey(NVIDIA_KEY);
   if (nv) {
@@ -85,7 +108,53 @@ export function openRouterModelId(): string {
 }
 
 export async function isLlmConfigured(): Promise<boolean> {
-  return (await providerChain("fast")).length > 0;
+  return (await isOtariConfigured()) || (await providerChain("fast")).length > 0;
+}
+
+/** Turn a guardrail / budget refusal into an action failure the UI shows as is. */
+export function failOtari(e: OtariError): never {
+  fail(otariUserMessage(e), {
+    errorCode: e.kind === "guardrail" ? "otari_guardrail_blocked" : e.kind === "budget" ? "otari_budget_exceeded" : "otari_auth",
+    statusCode: e.kind === "guardrail" ? 403 : e.kind === "budget" ? 402 : 401,
+    details: { kind: e.kind, ...(e.requestId ? { otariRequestId: e.requestId } : {}) },
+  });
+}
+
+function jsonSchemaFor(schema: z.ZodType): Record<string, unknown> {
+  const js = z.toJSONSchema(schema) as Record<string, unknown>;
+  delete js.$schema;
+  return js;
+}
+
+/**
+ * Structured output through Otari: json_schema response format, zod
+ * validation, next model in the role's list on a bad reply.
+ */
+async function otariStructured<T extends z.ZodType>(opts: {
+  role: OtariRole;
+  schema: T;
+  system: string;
+  prompt: string;
+  timeoutMs?: number | undefined;
+}): Promise<{ object: z.infer<T>; model: string; requestId?: string }> {
+  let parsed: z.infer<T> | undefined;
+  const r = await otariChat({
+    role: opts.role,
+    messages: [
+      { role: "system", content: `${opts.system}\n\nReply with one JSON object only.` },
+      { role: "user", content: opts.prompt },
+    ],
+    responseFormat: {
+      type: "json_schema",
+      json_schema: { name: "result", strict: false, schema: jsonSchemaFor(opts.schema) },
+    },
+    maxTokens: 8000,
+    timeoutMs: opts.timeoutMs ?? 90_000,
+    validate: (res) => {
+      parsed = opts.schema.parse(parseJsonObject(res.text)) as z.infer<T>;
+    },
+  });
+  return { object: parsed as z.infer<T>, model: r.model, ...(r.requestId ? { requestId: r.requestId } : {}) };
 }
 
 function languageModel(t: ProviderTarget): LanguageModel {
@@ -138,15 +207,30 @@ export async function generateStructured<T extends z.ZodType>(opts: {
   system: string;
   prompt: string;
   timeoutMs?: number;
-}): Promise<{ object: z.infer<T>; model: string; provider: ProviderId }> {
-  const chain = await providerChain("fast");
+  /** Otari model role; default "extract". */
+  role?: OtariRole;
+}): Promise<{ object: z.infer<T>; model: string; provider: ProviderId; otariRequestId?: string }> {
+  const errors: string[] = [];
+  if (await isOtariConfigured()) {
+    try {
+      const r = await otariStructured({ ...opts, role: opts.role ?? "extract" });
+      return { object: r.object, model: r.model, provider: "otari", ...(r.requestId ? { otariRequestId: r.requestId } : {}) };
+    } catch (error) {
+      if (error instanceof OtariError && error.fatal) failOtari(error);
+      errors.push(short(error));
+      console.warn(`[llm] Otari failed, trying direct providers: ${short(error)}`);
+    }
+  }
+  const chain = (await providerChain("fast")).filter((t) => t.provider !== "otari");
   if (!chain.length) {
+    if (errors.length) {
+      fail(`The model call failed on Otari. ${errors.join(" | ")}`, { errorCode: "llm_failed", statusCode: 502 });
+    }
     fail(
-      "No NVIDIA_API_KEY or OPENROUTER_API_KEY is configured for in-action AI. The chat agent can do this step itself: read the hackathon with get-hackathon and write results with the matching action.",
+      "No OTARI_API_KEY, NVIDIA_API_KEY or OPENROUTER_API_KEY is configured for in-action AI. The chat agent can do this step itself: read the hackathon with get-hackathon and write results with the matching action.",
       { errorCode: "llm_not_configured", statusCode: 412 },
     );
   }
-  const errors: string[] = [];
   for (const target of chain) {
     try {
       const result = await generateObject({
@@ -183,8 +267,10 @@ export interface ChatResult {
   model: string;
   ms: number;
   completionTokens: number | null;
-  /** USD, when the provider reports it (OpenRouter does). */
+  /** USD, when the provider reports it (OpenRouter and Otari do). */
   cost: number | null;
+  /** Otari-Request-Id when served through Otari. */
+  requestId?: string;
   attempts: string[];
 }
 
@@ -218,6 +304,7 @@ async function streamChat(
           ? { "HTTP-Referer": "https://www.agent-native.com", "X-Title": "HackPilot" }
           : {}),
       },
+      // Otari: per-end-user budgets (`user`) and request guardrails.
       body: JSON.stringify({
         model: t.model,
         messages,
@@ -227,6 +314,7 @@ async function streamChat(
         ...(t.provider === "openrouter" ? { usage: { include: true } } : { stream_options: { include_usage: true } }),
         ...(opts.jsonObject ? { response_format: { type: "json_object" } } : {}),
         ...(t.provider === "nvidia" ? nvidiaExtraBody() : {}),
+        ...(t.provider === "otari" ? otariBodyExtras() : {}),
         // The tested build models support low-effort reasoning. DeepSeek
         // keeps reasoning enabled, while leaving room to emit the app files.
         ...(t.provider === "openrouter" && (t.model.toLowerCase().replace(/:.*$/, "") === "z-ai/glm-5.3" ||
@@ -235,6 +323,10 @@ async function streamChat(
           : {}),
       }),
     });
+    if (!res.ok && t.provider === "otari") {
+      throw classifyOtariError(res.status, await res.text().catch(() => ""), res.headers);
+    }
+    const requestId = t.provider === "otari" ? (res.headers.get("otari-request-id") ?? undefined) : undefined;
     if (!res.ok || !res.body) {
       const body = (await res.text().catch(() => "")).slice(0, 200);
       throw new ProviderError(`HTTP ${res.status}${body ? `: ${body}` : ""}`);
@@ -257,7 +349,7 @@ async function streamChat(
         if (data === "[DONE]") continue;
         let j: {
           choices?: { delta?: { content?: string | null; reasoning_content?: string | null; reasoning?: string | null } }[];
-          usage?: { completion_tokens?: number; cost?: number };
+          usage?: { completion_tokens?: number; cost?: number; cost_usd?: string | number };
           error?: { message?: string };
         };
         try {
@@ -275,12 +367,15 @@ async function streamChat(
         if (j.usage) {
           completionTokens = j.usage.completion_tokens ?? completionTokens;
           if (typeof j.usage.cost === "number") cost = j.usage.cost;
+          else if (j.usage.cost_usd != null && Number.isFinite(Number(j.usage.cost_usd))) cost = Number(j.usage.cost_usd);
         }
       }
     }
     if (!text.trim()) throw new ProviderError("empty response");
-    return { text, provider: t.provider, model: t.model, ms: Date.now() - started, completionTokens, cost };
+    if (requestId) console.info(`[otari] build ${t.model} req=${requestId} ${Date.now() - started}ms`);
+    return { text, provider: t.provider, model: t.model, ms: Date.now() - started, completionTokens, cost, ...(requestId ? { requestId } : {}) };
   } catch (error) {
+    if (error instanceof OtariError) throw error;
     const reason = ctrl.signal.aborted ? short(ctrl.signal.reason) : short(error);
     throw new ProviderError(reason);
   } finally {
@@ -309,26 +404,34 @@ export async function chatWithFallback(
   const chain = (await providerChain(opts.purpose)).filter((t) => !opts.skip?.includes(t.provider));
   if (!chain.length) {
     if (opts.purpose === "build" && !opts.skip?.includes("openrouter")) {
-      throw new Error("Build it requires an enabled OpenRouter provider and OPENROUTER_API_KEY.");
+      throw new Error("Build it requires OTARI_API_KEY or an enabled OpenRouter provider and OPENROUTER_API_KEY.");
     }
-    throw new Error("No LLM provider is configured or available (NVIDIA_API_KEY / OPENROUTER_API_KEY).");
+    throw new Error("No LLM provider is configured or available (OTARI_API_KEY / NVIDIA_API_KEY / OPENROUTER_API_KEY).");
   }
   const attempts: string[] = [];
   for (const target of chain) {
     opts.onAttempt?.({ provider: target.provider, model: target.model });
-    try {
-      const r = await streamChat(target, messages, {
-        purpose: opts.purpose,
-        maxTokens: opts.maxTokens ?? 4000,
-        timeoutMs: opts.timeoutMs ?? 120_000,
-        firstTokenMs: opts.firstTokenMs ?? 60_000,
-        jsonObject: opts.jsonObject ?? false,
-      });
-      attempts.push(`${target.provider}: ${target.model} ok in ${Math.round(r.ms / 1000)}s`);
-      return { ...r, attempts };
-    } catch (error) {
-      attempts.push(`${target.provider}: ${target.model} failed: ${short(error)}`);
-      console.warn(`[llm] ${target.provider}: ${target.model} failed: ${short(error)}`);
+    for (let retry = 0; retry < 3; retry++) {
+      try {
+        const r = await streamChat(target, messages, {
+          purpose: opts.purpose,
+          maxTokens: opts.maxTokens ?? 4000,
+          timeoutMs: opts.timeoutMs ?? 120_000,
+          firstTokenMs: opts.firstTokenMs ?? 60_000,
+          jsonObject: opts.jsonObject ?? false,
+        });
+        attempts.push(`${target.provider}: ${target.model} ok in ${Math.round(r.ms / 1000)}s${r.requestId ? ` (${r.requestId})` : ""}`);
+        return { ...r, attempts };
+      } catch (error) {
+        if (error instanceof OtariError) {
+          if (absorbOtariError(error)) continue;
+          // A guardrail block or spent budget refuses every model the same way.
+          if (error.fatal) throw new Error(otariUserMessage(error));
+        }
+        attempts.push(`${target.provider}: ${target.model} failed: ${short(error)}`);
+        console.warn(`[llm] ${target.provider}: ${target.model} failed: ${short(error)}`);
+        break;
+      }
     }
   }
   throw new Error(`Every provider failed: ${attempts.join(" | ")}`);
