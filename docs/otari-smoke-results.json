@@ -1,13 +1,13 @@
 {
-  "ranAt": "2026-11-11T02:24:30.802Z",
+  "ranAt": "2026-11-11T03:36:36.113Z",
   "tools": {
     "otari_web_fetch": {
-      "available": false,
-      "reason": "workspace_disabled"
+      "available": true,
+      "reason": null
     },
     "otari_web_search": {
-      "available": false,
-      "reason": "workspace_disabled"
+      "available": true,
+      "reason": null
     },
     "otari_code_execution": {
       "available": true,
@@ -15,11 +15,11 @@
     }
   },
   "webFetch": "unavailable → local fetch fallback",
-  "webSearch": "unavailable → skipped",
+  "webSearch": "used otari_web_search",
   "extract": {
     "model": "alibaba/qwen3-30b-a3b-instruct-2507",
     "provider": "otari",
-    "otariRequestId": "781c4815-8237-4c63-9374-85424ed281af",
+    "otariRequestId": "c6efaed8-240f-4337-aba3-9614e7b86fd4",
     "object": {
       "name": "Mozilla Otari hackathon",
       "deadlineLocal": "Nov 11 2026 9am PT",
@@ -32,15 +32,15 @@
   },
   "ideas": {
     "model": "alibaba/qwen3-235b-a22b-instruct-2507",
-    "otariRequestId": "599f3f88-9d72-4b56-9b46-06a400bef34a",
+    "otariRequestId": "a2c800d3-3a68-4179-8445-dc960c69e3a1",
     "titles": [
-      "OpenAudit: Compliance Agent for Open Models",
-      "LocalLens: Offline Multimodal Assistant"
+      "Otari LegalLens: Privacy Clause Analyzer",
+      "OpenModel Tutor: Offline-Capable Math Homework Helper"
     ]
   },
   "judge": {
     "model": "deepseek/deepseek-v4-flash",
-    "otariRequestId": "06d1765f-5c7f-48bb-8c30-302a3ac00bff",
+    "otariRequestId": "00bf3a43-02e4-440a-b1b0-1faa65d04100",
     "scores": {
       "open_models": 6,
       "otari_features": 4,
@@ -55,9 +55,9 @@
       "polish": 1.2
     },
     "weakest": "polish",
-    "hoursLeft": 14.6,
+    "hoursLeft": 13.4,
     "model": "deepseek/deepseek-v4-flash",
-    "otariRequestId": "18b465bf-22b2-48c4-a95b-a219a3efee3e"
+    "otariRequestId": "4d41680c-c9e4-4593-8d6b-795e73e2f16d"
   },
   "guard": {
     "safe": {
@@ -65,7 +65,7 @@
       "verdict": "safe",
       "categories": [],
       "model": "alibaba/qwen3guard-gen-8b",
-      "requestId": "985df2db-e797-41fe-8147-9856e8318d98"
+      "requestId": "5437f04d-e344-4a6a-8cf5-4b059f97f683"
     },
     "injected": {
       "flagged": true,
@@ -74,30 +74,29 @@
         "Jailbreak"
       ],
       "model": "alibaba/qwen3guard-gen-8b",
-      "requestId": "83c67a33-d7e3-40da-b577-982cb194d4bd"
+      "requestId": "925b22a1-fc0a-44a9-b832-44fe0ae8daa0"
     }
   },
   "mcp": {
     "model": "alibaba/qwen3-235b-a22b-instruct-2507",
-    "otariRequestId": "163c2522-dcf5-4032-a23e-373412377a85",
+    "otariRequestId": "155b1c23-e6f6-4e91-912d-c4eb0e979777",
     "server": "deepwiki",
     "toolsUsed": [
       "deepwiki.read_wiki_structure",
-      "deepwiki.read_wiki_structure",
-      "deepwiki.read_wiki_structure"
+      "deepwiki.ask_wiki_question"
     ],
-    "excerpt": "- any-llm unifies access to multiple open-weight LLM providers through a single standardized API, reducing integration complexity.\n- Core feature is provider abstraction: supports HuggingFace, Mistral, Groq, Anthropic, and self-hosted models via consistent interface.\n- Offers structured output (Resp"
+    "excerpt": "- any-llm unifies access to 30+ LLM providers via a single Python interface, reducing vendor lock-in.  \n- Core feature: standardized type system based on OpenAI’s API, enabling consistent request/response handling across models.  \n- Supports open-weight models through local/self-hosted providers lik"
   },
   "guardrailsField": {
     "model": "alibaba/qwen3-30b-a3b-instruct-2507",
-    "otariRequestId": "a8f47986-36de-48ec-bc74-51c3f00286a6"
+    "otariRequestId": "4652b00b-0350-4734-b16e-d73ea00c037a"
   },
   "build": {
     "provider": "otari",
     "model": "alibaba/qwen3-coder-480b-a35b-instruct",
-    "otariRequestId": "52ce7ff0-5399-4ffb-851e-3b668d2bfd4e",
+    "otariRequestId": "5f7ae96e-1d37-4b3c-82d2-1b74449fc717",
     "attempts": [
-      "otari: alibaba/qwen3-coder-480b-a35b-instruct ok in 1s (52ce7ff0-5399-4ffb-851e-3b668d2bfd4e)"
+      "otari: alibaba/qwen3-coder-480b-a35b-instruct ok in 1s (5f7ae96e-1d37-4b3c-82d2-1b74449fc717)"
     ],
     "chars": 188
   },
@@ -105,7 +104,7 @@
     "model": "alibaba/qwen3-235b-a22b-instruct-2507",
     "toolCalled": true,
     "text": "The deadline for the Mozilla Otari Hackathon is November 11, 2026.",
-    "otariRequestIds": "9ba8b132-9379-4b2d-8a24-9b0684381a7f"
+    "otariRequestIds": "dc594bdb-b26b-490e-8e20-574480a2d587"
   },
   "agentEngine": {
     "engine": "otari",
@@ -291,16 +290,359 @@
       "ms": 3611,
       "costUsd": 0.000289,
       "at": "2026-11-11T02:24:30.784Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "ee9e5174-5555-471a-83c4-97bc86e591b4",
+      "responseId": "chatcmpl-93b01e29-e073-4b3f-8ca3-099e841a4e4d",
+      "fallback": false,
+      "tools": [
+        "otari_web_fetch"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1453,
+      "costUsd": 0.010069,
+      "at": "2026-11-11T03:29:31.086Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "2d915e32-8daa-451f-8b19-b53e63c16c9c",
+      "responseId": "chatcmpl-ef9e90fd-4716-45fe-91ec-acb5c0ca2066",
+      "fallback": false,
+      "tools": [
+        "otari_web_search"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1292,
+      "costUsd": 0.010397,
+      "at": "2026-11-11T03:29:32.382Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "7de2c12b-3637-4c2f-bf96-721b09179332",
+      "responseId": "chatcmpl-3586795d-2ef0-4b18-880c-2e1dbb4cc2b6",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1340,
+      "costUsd": 0.00003,
+      "at": "2026-11-11T03:29:33.726Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "f4efaee4-427f-4e86-b6e9-6970ed24ec6d",
+      "responseId": "chatcmpl-eec7930e-2ec9-4454-a831-923aea7ff31b",
+      "fallback": false,
+      "tools": [
+        "otari_web_fetch"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1536,
+      "costUsd": 0.010276,
+      "at": "2026-11-11T03:29:35.268Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "0f8976f5-890c-4dd2-95c3-ea30a0a5eb82",
+      "responseId": "chatcmpl-8f7f55496436719a",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 2072,
+      "costUsd": 0,
+      "at": "2026-11-11T03:29:38.117Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "87b4df35-ca17-47f7-a9a8-71ad6748a4f7",
+      "responseId": "chatcmpl-d403ecf8-b4be-4c2d-b51a-b6fce799fd01",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1991,
+      "costUsd": 0.000299,
+      "at": "2026-11-11T03:29:40.117Z"
+    },
+    {
+      "role": "ideas",
+      "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+      "servedBy": "deepinfra:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "requestId": "92b83e1d-8ff4-4beb-9903-0c2b7d82982c",
+      "responseId": "chatcmpl-Rp2ueS9yHzfbYhw13FiIEXXO",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 23773,
+      "costUsd": 0.000292,
+      "at": "2026-11-11T03:30:03.908Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "4f7d26f3-b588-412f-a02e-6c05e6405502",
+      "responseId": "chatcmpl-R5SOSas4QJQ4JCHU5IIFYHwa",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 2666,
+      "costUsd": 0.000024,
+      "at": "2026-11-11T03:30:06.580Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "62fb5839-8157-4030-a2b2-4e66c2cba6e8",
+      "responseId": "chatcmpl-RWXECvmCQnShzCMSE2vcEG1r",
+      "fallback": false,
+      "tools": [
+        "otari_code_execution"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 8028,
+      "costUsd": 0.010158,
+      "at": "2026-11-11T03:30:14.614Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "3e0d9e21-81f4-47c4-8f77-163e1f8784c1",
+      "responseId": "chatcmpl-adcc4480a633297e",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1000,
+      "costUsd": 0,
+      "at": "2026-11-11T03:30:15.618Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "d4b4e62e-1c0b-477a-9adf-24b6c76d4a82",
+      "responseId": "chatcmpl-96a7d5eef9403561",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 833,
+      "costUsd": 0,
+      "at": "2026-11-11T03:30:16.452Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "cc5e77c7-f078-40ca-9d27-0885af822bfe",
+      "responseId": "chatcmpl-a39e6d5a-f4a0-47b4-a87f-8ee935da23e2",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 650,
+      "costUsd": 0.000005,
+      "at": "2026-11-11T03:30:17.638Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "9a755ab5-e311-4980-b216-7e6605986229",
+      "responseId": "chatcmpl-174bfd71-565f-4f0a-9add-e7e1546200f0",
+      "fallback": false,
+      "tools": [
+        "otari_web_fetch"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 855,
+      "costUsd": 0.000031,
+      "at": "2026-11-11T03:34:35.905Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "c3d3b27f-1548-408e-8a6d-daad581e8865",
+      "responseId": "chatcmpl-28c14005-9423-4c6a-80fb-8a7bdb7c7f05",
+      "fallback": false,
+      "tools": [
+        "otari_web_search"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 10507,
+      "costUsd": 0.010538,
+      "at": "2026-11-11T03:34:46.413Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "c6efaed8-240f-4337-aba3-9614e7b86fd4",
+      "responseId": "chatcmpl-48309acd-d3f9-4f6c-9232-34464d828733",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1979,
+      "costUsd": 0.00003,
+      "at": "2026-11-11T03:34:48.395Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "97fc9cda-d86a-4fe1-a5c4-7ca1aab642f1",
+      "responseId": "chatcmpl-ce1df841-3351-4b75-acb0-f3851688f68d",
+      "fallback": false,
+      "tools": [
+        "otari_web_fetch"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 27682,
+      "costUsd": 0.010731,
+      "at": "2026-11-11T03:35:16.080Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "47bda8d9-28f5-452b-b3b7-b80a72178716",
+      "responseId": "chatcmpl-b6c33dd1df1e3e2d",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1652,
+      "costUsd": 0,
+      "at": "2026-11-11T03:35:17.733Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "970ec9c3-07fd-4f60-a21b-a5f2882d2b90",
+      "responseId": "chatcmpl-031edb29-02bb-4632-a5e2-a9c97f0340eb",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 2588,
+      "costUsd": 0.000198,
+      "at": "2026-11-11T03:35:20.329Z"
+    },
+    {
+      "role": "ideas",
+      "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+      "servedBy": "deepinfra:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "requestId": "a2c800d3-3a68-4179-8445-dc960c69e3a1",
+      "responseId": "chatcmpl-R1JbwSkSFozpkR27vKQmzJJx",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 19914,
+      "costUsd": 0.00029,
+      "at": "2026-11-11T03:35:40.262Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "00bf3a43-02e4-440a-b1b0-1faa65d04100",
+      "responseId": "chatcmpl-RjZG3n9kpvgUQBE4idFY4roj",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 1674,
+      "costUsd": 0.000041,
+      "at": "2026-11-11T03:35:41.942Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "4d41680c-c9e4-4593-8d6b-795e73e2f16d",
+      "responseId": "chatcmpl-RUUoNUWWig5vVQ0IMan4C2zv",
+      "fallback": false,
+      "tools": [
+        "otari_code_execution"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 8845,
+      "costUsd": 0.010195,
+      "at": "2026-11-11T03:35:50.789Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "5437f04d-e344-4a6a-8cf5-4b059f97f683",
+      "responseId": "chatcmpl-b0ee035575a6620f",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 900,
+      "costUsd": 0,
+      "at": "2026-11-11T03:35:51.691Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "925b22a1-fc0a-44a9-b832-44fe0ae8daa0",
+      "responseId": "chatcmpl-9e5db568072c0b13",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 787,
+      "costUsd": 0,
+      "at": "2026-11-11T03:35:52.478Z"
+    },
+    {
+      "role": "research",
+      "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+      "servedBy": "deepinfra:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "requestId": "155b1c23-e6f6-4e91-912d-c4eb0e979777",
+      "responseId": "chatcmpl-ROFaxy0hrWaERuXg3xckF1tM",
+      "fallback": false,
+      "tools": [
+        "mcp:deepwiki"
+      ],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 33150,
+      "costUsd": 0.000597,
+      "at": "2026-11-11T03:36:25.630Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "4652b00b-0350-4734-b16e-d73ea00c037a",
+      "responseId": "chatcmpl-78828d9b-664b-47f7-98ad-e55e2b49c787",
+      "fallback": false,
+      "tools": [],
+      "user": "smoke-test@hackpilot.dev",
+      "ms": 712,
+      "costUsd": 0.000005,
+      "at": "2026-11-11T03:36:26.656Z"
     }
   ],
   "importPipeline": {
-    "fetchedVia": "direct",
+    "fetchedVia": "otari_web_fetch",
     "guard": {
       "flagged": false,
       "verdict": "safe",
       "categories": [],
       "model": "alibaba/qwen3guard-gen-8b",
-      "requestId": "61f0711c-9be5-478b-ae06-f8d27bcbf925"
+      "requestId": "47bda8d9-28f5-452b-b3b7-b80a72178716"
     },
     "method": "llm",
     "model": "alibaba/qwen3-30b-a3b-instruct-2507",
