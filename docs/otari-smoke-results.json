@@ -1,0 +1,309 @@
+{
+  "ranAt": "2026-11-11T02:24:30.802Z",
+  "tools": {
+    "otari_web_fetch": {
+      "available": false,
+      "reason": "workspace_disabled"
+    },
+    "otari_web_search": {
+      "available": false,
+      "reason": "workspace_disabled"
+    },
+    "otari_code_execution": {
+      "available": true,
+      "reason": null
+    }
+  },
+  "webFetch": "unavailable → local fetch fallback",
+  "webSearch": "unavailable → skipped",
+  "extract": {
+    "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+    "provider": "otari",
+    "otariRequestId": "781c4815-8237-4c63-9374-85424ed281af",
+    "object": {
+      "name": "Mozilla Otari hackathon",
+      "deadlineLocal": "Nov 11 2026 9am PT",
+      "criteria": [
+        "open models 30%",
+        "Otari features 50%",
+        "polish 20%"
+      ]
+    }
+  },
+  "ideas": {
+    "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+    "otariRequestId": "599f3f88-9d72-4b56-9b46-06a400bef34a",
+    "titles": [
+      "OpenAudit: Compliance Agent for Open Models",
+      "LocalLens: Offline Multimodal Assistant"
+    ]
+  },
+  "judge": {
+    "model": "deepseek/deepseek-v4-flash",
+    "otariRequestId": "06d1765f-5c7f-48bb-8c30-302a3ac00bff",
+    "scores": {
+      "open_models": 6,
+      "otari_features": 4,
+      "polish": 3
+    }
+  },
+  "codeExecution": {
+    "weightedScore": 8.1,
+    "contributions": {
+      "open_models": 2.4,
+      "otari_features": 4.5,
+      "polish": 1.2
+    },
+    "weakest": "polish",
+    "hoursLeft": 14.6,
+    "model": "deepseek/deepseek-v4-flash",
+    "otariRequestId": "18b465bf-22b2-48c4-a95b-a219a3efee3e"
+  },
+  "guard": {
+    "safe": {
+      "flagged": false,
+      "verdict": "safe",
+      "categories": [],
+      "model": "alibaba/qwen3guard-gen-8b",
+      "requestId": "985df2db-e797-41fe-8147-9856e8318d98"
+    },
+    "injected": {
+      "flagged": true,
+      "verdict": "controversial",
+      "categories": [
+        "Jailbreak"
+      ],
+      "model": "alibaba/qwen3guard-gen-8b",
+      "requestId": "83c67a33-d7e3-40da-b577-982cb194d4bd"
+    }
+  },
+  "mcp": {
+    "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+    "otariRequestId": "163c2522-dcf5-4032-a23e-373412377a85",
+    "server": "deepwiki",
+    "toolsUsed": [
+      "deepwiki.read_wiki_structure",
+      "deepwiki.read_wiki_structure",
+      "deepwiki.read_wiki_structure"
+    ],
+    "excerpt": "- any-llm unifies access to multiple open-weight LLM providers through a single standardized API, reducing integration complexity.\n- Core feature is provider abstraction: supports HuggingFace, Mistral, Groq, Anthropic, and self-hosted models via consistent interface.\n- Offers structured output (Resp"
+  },
+  "guardrailsField": {
+    "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+    "otariRequestId": "a8f47986-36de-48ec-bc74-51c3f00286a6"
+  },
+  "build": {
+    "provider": "otari",
+    "model": "alibaba/qwen3-coder-480b-a35b-instruct",
+    "otariRequestId": "52ce7ff0-5399-4ffb-851e-3b668d2bfd4e",
+    "attempts": [
+      "otari: alibaba/qwen3-coder-480b-a35b-instruct ok in 1s (52ce7ff0-5399-4ffb-851e-3b668d2bfd4e)"
+    ],
+    "chars": 188
+  },
+  "pilotChat": {
+    "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+    "toolCalled": true,
+    "text": "The deadline for the Mozilla Otari Hackathon is November 11, 2026.",
+    "otariRequestIds": "9ba8b132-9379-4b2d-8a24-9b0684381a7f"
+  },
+  "agentEngine": {
+    "engine": "otari",
+    "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+    "toolCall": {
+      "name": "list-hackathons",
+      "input": {
+        "limit": 3
+      }
+    },
+    "events": [
+      "tool-input-start",
+      "tool-input-delta",
+      "tool-call",
+      "usage",
+      "assistant-content",
+      "stop"
+    ]
+  },
+  "calls": [
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "781c4815-8237-4c63-9374-85424ed281af",
+      "responseId": "chatcmpl-b7501c96-41ca-437a-ac96-6536914394d7",
+      "fallback": false,
+      "tools": [],
+      "ms": 2606,
+      "costUsd": 0.00003,
+      "at": "2026-11-11T02:21:57.654Z"
+    },
+    {
+      "role": "ideas",
+      "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+      "servedBy": "deepinfra:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "requestId": "599f3f88-9d72-4b56-9b46-06a400bef34a",
+      "responseId": "chatcmpl-RivnHK2RPMvT9oao5R47Kqdz",
+      "fallback": false,
+      "tools": [],
+      "ms": 17055,
+      "costUsd": 0.000274,
+      "at": "2026-11-11T02:22:14.715Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "06d1765f-5c7f-48bb-8c30-302a3ac00bff",
+      "responseId": "chatcmpl-RkcUVC2urVRImTIOmUTP7Tx9",
+      "fallback": false,
+      "tools": [],
+      "ms": 1540,
+      "costUsd": 0.000024,
+      "at": "2026-11-11T02:22:16.258Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "20f29e42-d684-4262-8bc7-d5a74c83718c",
+      "responseId": "chatcmpl-RigmpMEYrts4I9Le9nsgtr8g",
+      "fallback": false,
+      "tools": [
+        "otari_code_execution"
+      ],
+      "ms": 1739,
+      "costUsd": 0.000083,
+      "at": "2026-11-11T02:22:18.000Z"
+    },
+    {
+      "role": "judge",
+      "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+      "servedBy": "deepinfra:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "requestId": "9ab31503-0cda-4893-a1ef-3400c05fd3f4",
+      "responseId": "chatcmpl-RXauLUCs8NYT5k9mAcgBR7qG",
+      "fallback": false,
+      "tools": [
+        "otari_code_execution"
+      ],
+      "ms": 14017,
+      "costUsd": 0.000279,
+      "at": "2026-11-11T02:22:32.018Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "985df2db-e797-41fe-8147-9856e8318d98",
+      "responseId": "chatcmpl-9f5efd567661be7c",
+      "fallback": false,
+      "tools": [],
+      "ms": 882,
+      "costUsd": 0,
+      "at": "2026-11-11T02:22:32.906Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "83c67a33-d7e3-40da-b577-982cb194d4bd",
+      "responseId": "chatcmpl-8bc57a33edd42e40",
+      "fallback": false,
+      "tools": [],
+      "ms": 888,
+      "costUsd": 0,
+      "at": "2026-11-11T02:22:33.795Z"
+    },
+    {
+      "role": "research",
+      "model": "alibaba/qwen3-235b-a22b-instruct-2507",
+      "servedBy": "deepinfra:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "requestId": "163c2522-dcf5-4032-a23e-373412377a85",
+      "responseId": "chatcmpl-RGXRNojDQxl1lMQG6GkQKC3V",
+      "fallback": false,
+      "tools": [
+        "mcp:deepwiki"
+      ],
+      "ms": 10224,
+      "costUsd": 0.000531,
+      "at": "2026-11-11T02:22:44.020Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "a8f47986-36de-48ec-bc74-51c3f00286a6",
+      "responseId": "chatcmpl-c1bbd4ba-100d-4ccf-8d06-9cb41cbe2ced",
+      "fallback": false,
+      "tools": [],
+      "ms": 616,
+      "costUsd": 0.000005,
+      "at": "2026-11-11T02:22:44.897Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "e4a99172-e784-48ef-9655-4fa37075c32a",
+      "responseId": "chatcmpl-RxwshRdgsCBCtqPeARjSohVi",
+      "fallback": false,
+      "tools": [
+        "otari_code_execution"
+      ],
+      "ms": 16748,
+      "costUsd": 0.010158,
+      "at": "2026-11-11T02:23:56.191Z"
+    },
+    {
+      "role": "judge",
+      "model": "deepseek/deepseek-v4-flash",
+      "servedBy": "deepinfra:deepseek-ai/DeepSeek-V4-Flash",
+      "requestId": "18b465bf-22b2-48c4-a95b-a219a3efee3e",
+      "responseId": "chatcmpl-RkcxsDVoLyEcRXi4K9w8sebY",
+      "fallback": false,
+      "tools": [
+        "otari_code_execution"
+      ],
+      "ms": 5044,
+      "costUsd": 0.010158,
+      "at": "2026-11-11T02:24:05.609Z"
+    },
+    {
+      "role": "guard",
+      "model": "alibaba/qwen3guard-gen-8b",
+      "servedBy": "ovhcloud:Qwen3Guard-Gen-8B",
+      "requestId": "61f0711c-9be5-478b-ae06-f8d27bcbf925",
+      "responseId": "chatcmpl-8dba2b2b131f1acc",
+      "fallback": false,
+      "tools": [],
+      "ms": 2246,
+      "costUsd": 0,
+      "at": "2026-11-11T02:24:27.165Z"
+    },
+    {
+      "role": "extract",
+      "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+      "servedBy": "nebius:Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "requestId": "75743feb-ce00-43f6-a5c2-ced00c14bfb6",
+      "responseId": "chatcmpl-d1aba272-c3e0-41f9-a386-159354a42edb",
+      "fallback": false,
+      "tools": [],
+      "ms": 3611,
+      "costUsd": 0.000289,
+      "at": "2026-11-11T02:24:30.784Z"
+    }
+  ],
+  "importPipeline": {
+    "fetchedVia": "direct",
+    "guard": {
+      "flagged": false,
+      "verdict": "safe",
+      "categories": [],
+      "model": "alibaba/qwen3guard-gen-8b",
+      "requestId": "61f0711c-9be5-478b-ae06-f8d27bcbf925"
+    },
+    "method": "llm",
+    "model": "alibaba/qwen3-30b-a3b-instruct-2507",
+    "name": "any-llm"
+  }
+}
