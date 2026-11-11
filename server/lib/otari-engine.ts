@@ -25,15 +25,27 @@ export function createOtariRequestFetch(baseFetch: typeof fetch = fetch): typeof
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (new URL(url).origin !== origin) throw new Error(`Blocked: Otari engine request left ${origin}`);
     let next = init;
+    let model = "";
+    let endUser = false;
     if (init?.body && typeof init.body === "string") {
       try {
         const body = JSON.parse(init.body) as Record<string, unknown>;
-        next = { ...init, body: JSON.stringify({ ...body, ...otariBodyExtras() }) };
+        const extras = otariBodyExtras();
+        model = typeof body.model === "string" ? body.model : "";
+        endUser = "user" in extras;
+        next = { ...init, body: JSON.stringify({ ...body, ...extras }) };
       } catch {
         // not JSON: send as is
       }
     }
+    const started = Date.now();
     const res = await baseFetch(input, next);
+    if (res.ok && model) {
+      const servedBy = [res.headers.get("otari-provider"), res.headers.get("otari-model")].filter(Boolean).join(":");
+      console.info(
+        `[otari] chat ${model}${servedBy ? ` (${servedBy})` : ""} req=${res.headers.get("otari-request-id") ?? "?"}${endUser ? " user=yes" : ""} ${Date.now() - started}ms`,
+      );
+    }
     if (!res.ok && attempt < 2 && (res.status === 400 || res.status === 403)) {
       const text = await res.clone().text().catch(() => "");
       if (absorbOtariError(classifyOtariError(res.status, text, res.headers))) return send(input, init, attempt + 1);
