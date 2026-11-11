@@ -295,6 +295,8 @@ export interface OtariChatOptions {
   /** Override the role's model list. */
   models?: string[];
   tools?: OtariTool[];
+  /** "required" makes the model call one of `tools` (models often skip code execution otherwise). */
+  toolChoice?: "auto" | "required";
   mcpServers?: OtariMcpServer[];
   responseFormat?: Record<string, unknown>;
   maxTokens?: number;
@@ -350,6 +352,7 @@ async function postOnce(
       temperature: opts.temperature ?? 0.2,
       ...(opts.maxTokens ? { max_tokens: opts.maxTokens } : {}),
       ...(opts.tools?.length ? { tools: opts.tools } : {}),
+      ...(opts.tools?.length && opts.toolChoice ? { tool_choice: opts.toolChoice } : {}),
       ...mcpFields(opts.mcpServers),
       ...(opts.responseFormat ? { response_format: opts.responseFormat } : {}),
       ...extras,
@@ -560,7 +563,10 @@ export async function otariRunPython(code: string, purpose: string): Promise<{ s
       role: "judge",
       models: [...models, ...models],
       tools: [{ type: "otari_code_execution" }],
-      maxTokens: 400,
+      // Without "required", DeepSeek and gpt-oss often answer from the prompt (or emit an
+      // empty tool call when max_tokens is tight) instead of running the program.
+      toolChoice: "required",
+      maxTokens: 1200,
       messages: [
         {
           role: "system",
@@ -573,7 +579,8 @@ export async function otariRunPython(code: string, purpose: string): Promise<{ s
           throw new Error("model did not run the code tool");
       },
     });
-    const call = r.toolCalls.filter((c) => /code/i.test(String(c.type)) && c.status === "completed" && c.stdout).pop();
+    // With tool_choice "required" the model may run extra snippets afterwards; the first run is the given program.
+    const call = r.toolCalls.find((c) => /code/i.test(String(c.type)) && c.status === "completed" && c.stdout);
     if (!call?.stdout) return null;
     return { stdout: call.stdout, model: r.model, ...(r.requestId ? { requestId: r.requestId } : {}) };
   } catch (error) {
