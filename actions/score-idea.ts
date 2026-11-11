@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
-import { aiScoreIdea } from "../server/lib/ai-ideas.js";
+import { aiScoreIdea, otariScoreMath } from "../server/lib/ai-ideas.js";
 import {
   hackathonLink,
   nowIso,
@@ -17,7 +17,7 @@ import { ideaOut } from "../shared/outputs.js";
 
 export default defineAction({
   description:
-    "Score an idea 0-10 per rubric criterion id (partial updates merge with existing scores) and record a rationale; returns the new weighted total. Pass auto=true to have the server-side LLM judge it instead (needs OPENROUTER_API_KEY; otherwise judge it yourself and pass scores).",
+    "Score an idea 0-10 per rubric criterion id (partial updates merge with existing scores) and record a rationale; returns the new weighted total. Pass auto=true to have the server-side judge model (open-weight, via the Otari gateway) score it instead; otherwise judge it yourself and pass scores. With auto=true or verify=true the weighted total, per-criterion contributions, weakest criterion and hours left are computed in Otari's code-execution sandbox.",
   schema: z.object({
     id: z.string().describe("Idea id"),
     scores: ideaScoresSchema.optional(),
@@ -30,11 +30,27 @@ export default defineAction({
       .boolean()
       .optional()
       .describe("true to let the LLM score every criterion"),
+    verify: z
+      .boolean()
+      .optional()
+      .describe("true to compute the weighted total and time left in Otari's code-execution sandbox"),
   }),
   outputSchema: z.object({
     id: z.string(),
     hackathonId: z.string(),
     idea: ideaOut,
+    math: z
+      .object({
+        computedBy: z.literal("otari_code_execution"),
+        weightedScore: z.number(),
+        contributions: z.record(z.string(), z.number()),
+        weakest: z.string().nullable(),
+        hoursLeft: z.number().nullable(),
+        model: z.string(),
+        otariRequestId: z.string().optional(),
+      })
+      .optional(),
+    judge: z.object({ model: z.string(), otariRequestId: z.string().optional() }).optional(),
     message: z.string(),
   }),
   link: ({ result }) => hackathonLink(result.hackathonId, "ideas"),
@@ -59,8 +75,10 @@ export default defineAction({
     }
     let scores: Record<string, number>;
     let rationale = args.rationale ?? idea.rationale;
+    let judge: { model: string; otariRequestId?: string } | undefined;
     if (args.auto) {
-      const { object } = await aiScoreIdea(row, idea);
+      const { object, model, otariRequestId } = await aiScoreIdea(row, idea);
+      judge = { model, ...(otariRequestId ? { otariRequestId } : {}) };
       scores = validateScores(
         object.scores as Record<string, number>,
         row.rubric,
@@ -82,11 +100,19 @@ export default defineAction({
         .returning(),
     );
     const out = serializeIdea(updated, row.rubric);
+    const math = args.auto || args.verify ? await otariScoreMath(row.rubric, scores, row.deadlineAt) : null;
+    const weakestName = math?.weakest ? (row.rubric.find((c) => c.id === math.weakest)?.name ?? math.weakest) : null;
     return {
       id: updated.id,
       hackathonId: row.id,
       idea: out,
-      message: `“${updated.title}” scores ${out.weightedScore ?? "—"}/10 weighted.`,
+      ...(math ? { math: { computedBy: "otari_code_execution" as const, ...math } } : {}),
+      ...(judge ? { judge } : {}),
+      message: `“${updated.title}” scores ${math?.weightedScore ?? out.weightedScore ?? "—"}/10 weighted${
+        math
+          ? ` (computed in Otari's sandbox${weakestName ? `; most headroom: ${weakestName}` : ""}${math.hoursLeft != null ? `; ${math.hoursLeft} h left` : ""})`
+          : ""
+      }.`,
     };
   },
 });

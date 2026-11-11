@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDb, schema } from "../server/db/index.js";
-import { aiGenerateIdeas } from "../server/lib/ai-ideas.js";
+import { aiGenerateIdeas, researchHackathonTech } from "../server/lib/ai-ideas.js";
 import {
   hackathonLink,
   nextPosition,
@@ -16,7 +16,7 @@ import { ideaOut } from "../shared/outputs.js";
 
 export default defineAction({
   description:
-    "One-shot server-side brainstorm: the configured OpenRouter model proposes N new rubric-scored ideas for a hackathon and adds them to the board. Fails with llm_not_configured when no OPENROUTER_API_KEY is set — then brainstorm yourself and call add-ideas with scores.",
+    "One-shot server-side brainstorm: an open-weight model on the Otari gateway (after optional Otari-managed MCP research on the sponsor tech) proposes N new rubric-scored ideas for a hackathon and adds them to the board. Fails with llm_not_configured when no model key is set — then brainstorm yourself and call add-ideas with scores.",
   schema: z.object({
     hackathonId: z.string().describe("Hackathon id"),
     count: z.coerce
@@ -31,11 +31,24 @@ export default defineAction({
       .max(1000)
       .optional()
       .describe("Direction from the user, e.g. 'dev tools, solo, 3 days'"),
+    research: z
+      .boolean()
+      .optional()
+      .describe("Research the sponsor tech through Otari-managed MCP first (default true when configured)"),
   }),
   outputSchema: z.object({
     hackathonId: z.string(),
     ideas: z.array(ideaOut),
     model: z.string(),
+    research: z
+      .object({
+        server: z.string(),
+        model: z.string(),
+        toolsUsed: z.array(z.string()),
+        otariRequestId: z.string().optional(),
+      })
+      .optional(),
+    otariRequestId: z.string().optional(),
     message: z.string(),
   }),
   link: ({ args }) => hackathonLink(args.hackathonId, "ideas"),
@@ -54,10 +67,12 @@ export default defineAction({
       .from(ideas)
       .where(eq(ideas.hackathonId, row.id))
       .limit(200);
-    const { object, model } = await aiGenerateIdeas(row, {
+    const research = args.research === false ? null : await researchHackathonTech(row, args.brief);
+    const { object, model, otariRequestId } = await aiGenerateIdeas(row, {
       count: args.count,
       ...(args.brief ? { brief: args.brief } : {}),
       existingTitles: existing.map((e) => e.title),
+      ...(research ? { research: research.text } : {}),
     });
     const posRows = await db
       .select({ max: sql<number>`coalesce(max(${ideas.position}), -1)::int` })
@@ -87,7 +102,18 @@ export default defineAction({
       hackathonId: row.id,
       ideas: inserted.map((i) => serializeIdea(i, row.rubric)),
       model,
-      message: `Generated ${inserted.length} scored ideas with ${model}.`,
+      ...(research
+        ? {
+            research: {
+              server: research.server,
+              model: research.model,
+              toolsUsed: research.toolsUsed,
+              ...(research.requestId ? { otariRequestId: research.requestId } : {}),
+            },
+          }
+        : {}),
+      ...(otariRequestId ? { otariRequestId } : {}),
+      message: `Generated ${inserted.length} scored ideas with ${model}${research ? ` after researching the sponsor tech via ${research.server} MCP on Otari` : ""}.`,
     };
   },
 });
